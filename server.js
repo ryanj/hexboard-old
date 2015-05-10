@@ -17,6 +17,7 @@ var config   = cc().add({
   minions : process.env.DEMO_MINIONS || 5,
   pod_size: process.env.DEMO_POD_SIZE || 6
 })
+var index = fs.readFileSync(__dirname + '/static/index.html');
 
 // Routes
 app.addRoute("/status", function (req, res, opts, cb) {
@@ -39,7 +40,6 @@ app.addRoute("/containers/id", function (req, res, opts, cb) {
 
 // TODO: add the hex dashboard here:
 app.addRoute("/", function (req, res, opts, cb) {
-  var index = fs.readFileSync(__dirname + '/index.html');
   sendHtml(req, res, {
     body: index.toString(),
     statusCode: 200,
