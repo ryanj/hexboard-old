@@ -1,23 +1,17 @@
 var cc       = require('config-multipaas'),
     fs       = require('fs'),
-    restify     = require('restify')
-    //http     = require("http"),
-    //st       = require("st"),
-    //Router   = require("routes-router"),
-    //sendJson = require("send-data/json"),
-    //sendHtml = require("send-data/html"),
-    //sendError= require("send-data/error")
-
-//var app      = Router()
-var app         = restify.createServer()
+    restify  = require('restify'),
+    kclient  = require('node-kubernetes-client'),
+    doodleController = require('./doodle_controller.js')
+var app      = restify.createServer()
 
 app.use(restify.queryParser())
 app.use(restify.CORS())
 app.use(restify.fullResponse())
 
 // Default state:
+var index = fs.readFileSync(__dirname + '/static/index.html');
 var one_thousand = 1024;
-
 var config   = cc().add({
   one_k : process.env.DEMO_1K || one_thousand,
   minions : process.env.DEMO_MINIONS || 5,
@@ -25,21 +19,25 @@ var config   = cc().add({
   oauth_token: process.env.ACCESS_TOKEN,
   openshift_server: process.env.OPENSHIFT_SERVER
 })
-var doodleController = require('./doodle_controller.js')
-var index = fs.readFileSync(__dirname + '/static/index.html');
+var osv3_client = new kclient({
+  host:  config.get('openshift_server'),
+  protocol: 'https:',
+  version: 'v1beta2',
+  token: config.get('oauth_token')
+});
 
 // Routes
 app.get('/api/doodle/:containerId', doodleController.getImage);
 app.get('/api/doodle/random/:numDoodles', doodleController.randomDoodles);
 app.post('/api/doodle/', doodleController.receiveImage);
-app.get('/status', function (req, res, next)
-{
-  res.send("{status: 'ok'}");
-});
+app.get('/status', function (req, res, next) { res.send("{status: 'ok'}"); });
 
 //Return a list of all known containers (labeled as 1k)
 app.get("/containers", function (req, res, next) {
-  res.send("{status: 'ok'}")
+  osv3_client.pods.get(function (err, pods) {
+    console.log('pods:', pods);
+    res.send(pods)
+  });
 })
 //Return a websocket stream of container changes
 app.get("/containers/_changes", function (req, res, next) {
@@ -65,13 +63,11 @@ app.listen(config.get('PORT'), config.get('IP'), function () {
   console.log( "Listening on " + config.get('IP') + ", port " + config.get('PORT') )
 });
 
+// Sockets:
 var WebSocketServer = require('ws').Server
   , thousand = require('./thousand')
-
 var wss = new WebSocketServer({server: app, path: '/thousand'});
-
 var eventEmitter = thousand.doodleEmitter;
-
 var count = 0;
 var clients = {};
 
