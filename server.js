@@ -1,13 +1,19 @@
 var cc       = require('config-multipaas'),
     fs       = require('fs'),
-    http     = require("http"),
-    st       = require("st"),
-    Router   = require("routes-router"),
-    sendJson = require("send-data/json"),
-    sendHtml = require("send-data/html"),
-    sendError= require("send-data/error")
+    restify     = require('restify')
+    //http     = require("http"),
+    //st       = require("st"),
+    //Router   = require("routes-router"),
+    //sendJson = require("send-data/json"),
+    //sendHtml = require("send-data/html"),
+    //sendError= require("send-data/error")
 
-var app      = Router()
+//var app      = Router()
+var app         = restify.createServer()
+
+app.use(restify.queryParser())
+app.use(restify.CORS())
+app.use(restify.fullResponse())
 
 // Default state:
 var one_thousand = 1024;
@@ -15,46 +21,96 @@ var one_thousand = 1024;
 var config   = cc().add({
   one_k : process.env.DEMO_1K || one_thousand,
   minions : process.env.DEMO_MINIONS || 5,
-  pod_size: process.env.DEMO_POD_SIZE || 6
+  pod_size: process.env.DEMO_POD_SIZE || 6,
+  oauth_token: process.env.ACCESS_TOKEN,
+  openshift_server: process.env.OPENSHIFT_SERVER
 })
+var doodleController = require('./doodle_controller.js')
 var index = fs.readFileSync(__dirname + '/static/index.html');
 
 // Routes
-app.addRoute("/status", function (req, res, opts, cb) {
-  sendJson(req, res, "{status: 'ok'}")
-})
+app.get('/api/doodle/:containerId', doodleController.getImage);
+app.get('/api/doodle/random/:numDoodles', doodleController.randomDoodles);
+app.post('/api/doodle/', doodleController.receiveImage);
+app.get('/status', function (req, res, next)
+{
+  res.send("{status: 'ok'}");
+});
 
 //Return a list of all known containers (labeled as 1k)
-app.addRoute("/containers", function (req, res, opts, cb) {
-  sendJson(req, res, "{status: 'ok'}")
+app.get("/containers", function (req, res, next) {
+  res.send("{status: 'ok'}")
 })
 //Return a websocket stream of container changes
-app.addRoute("/containers/_changes", function (req, res, opts, cb) {
-  sendJson(req, res, "{status: 'ok'}")
+app.get("/containers/_changes", function (req, res, next) {
+  res.send("{status: 'ok'}")
 })
 //fetch, update, or kill a container by id
-app.addRoute("/containers/id", function (req, res, opts, cb) {
+app.get("/containers/id", function (req, res, next) {
   //Branch on GET, PUT, and DELETE
-  sendJson(req, res, "{status: 'ok'}")
+  res.send("{status: 'ok'}")
 })
 
 // TODO: add the hex dashboard here:
-app.addRoute("/", function (req, res, opts, cb) {
-  sendHtml(req, res, {
-    body: index.toString(),
-    statusCode: 200,
-    headers: {}
-  })
+// 
+app.get('/', function (req, res, next){
+  res.status(200);
+  res.header('Content-Type', 'text/html');
+  res.end(index.toString().replace(/host:port/g, req.header('Host')));
 })
 
 // Serve all the static assets prefixed at /static
-// so GET /js/app.js will work.
-app.addRoute("/*", st({
-  path: __dirname + "/static",
-  url: "/"
-}))
-
-var server = http.createServer(app)
-server.listen(config.get('PORT'), config.get('IP'), function () {
+app.get('.*', restify.serveStatic({directory: './static/'}));
+app.listen(config.get('PORT'), config.get('IP'), function () {
   console.log( "Listening on " + config.get('IP') + ", port " + config.get('PORT') )
+});
+
+var WebSocketServer = require('ws').Server
+  , thousand = require('./thousand')
+
+var wss = new WebSocketServer({server: app, path: '/thousand'});
+
+var eventEmitter = thousand.doodleEmitter;
+
+var count = 0;
+var clients = {};
+
+wss.broadcast = function broadcast(data) {
+  for (var i in clients) {
+    var ws = clients[i];
+    if (ws.readyState === ws.OPEN) {
+      ws.send(data);
+    } else if (ws.readyState === ws.CLOSED) {
+      console.log('Peer #' + ws.id + ' disconnected from /thousand.');
+      delete clients[ws.id];
+    }
+  };
+};
+
+wss.on('connection', function connection(ws) {
+var id = count++;
+clients[id] = ws;
+ws.id = id;
+console.log('/thousand connection');
+var subscription;
+subscription = thousand.events.subscribe(function(event) {
+  if (ws.readyState === ws.OPEN) {
+    ws.send(JSON.stringify({type: 'event', data: event}));
+  };
+});
+ws.on('message', function(data, flags) {
+var message = JSON.parse(data);
+  if (message.type === 'ping') {
+    ws.send(JSON.stringify({type: 'pong'}));
+  }
+});
+ws.onclose = function() {
+  console.log('Onclose: disposing /thousand subscriptions');
+  subscription && subscription.dispose();
+};
+});
+
+eventEmitter.on('new-doodle', function(doodle) {
+console.log('doodle listener invoked.');
+  wss.broadcast(JSON.stringify({type: 'doodle', data: doodle}));
 });
