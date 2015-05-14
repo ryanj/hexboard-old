@@ -29,7 +29,7 @@ var osv3_client = new kclient({
 // Routes
 app.get('/api/doodle/:containerId', doodleController.getImage);
 app.get('/api/doodle/random/:numDoodles', doodleController.randomDoodles);
-app.post('/api/doodle/', doodleController.receiveImage);
+app.put('/doodle', doodleController.receiveImage);
 app.get('/status', function (req, res, next) { res.send("{status: 'ok'}"); });
 
 //Return a list of all known containers (labeled as 1k)

@@ -26,5 +26,16 @@ This demo can be launched on the web using the nodejs base image.
 
 Make sure to include environment variables for the `OPENSHIFT_SERVER` and `ACCESS_TOKEN` if you want live data.
 
+Then, start a build from the CLI:
+
+```bash
+osc start-build commander-1k
+```
+
+And, add public routes:
+```bash
+osc create -f routes.json
+```
+
 ## License
 This code is dedicated to the public domain to the maximum extent permitted by applicable law, pursuant to CC0 (http://creativecommons.org/publicdomain/zero/1.0/)
