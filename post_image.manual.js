@@ -1,23 +1,18 @@
-'use strict';
-
 var request = require('request')
   , fs = require('fs')
-  ;
+  , server_name = process.env.OPENSHIFT_SERVER || "http://localhost:8080"
+  , username = process.env.USERNAME || "jefferson"
+  , cuid = process.env.CUID || "007"
+  , submission = process.env.SUBMISSION || "awesome"
 
-// Returns a random integer between min included) and max (excluded)
-var getRandomInt = function (min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
-};
 
-var readStream = fs.createReadStream('server/api/thousand/cherries.png');
-var id = getRandomInt(0,1060);
-var url = 'http://localhost:9000/api/doodle/' + id + '?name=John%20Doe';
-// var url = 'http://beacon.jbosskeynote.com/api/doodle/' + id + '?name=John%20Doe';
-var req = request.post(url, function (err, res, body) {
+var readStream = fs.createReadStream('static/img/cherries.png');
+var png = fs.readFileSync(__dirname + '/static/img/cherries.png');
+var url = server_name + '/doodle?username='+username+'&cuid='+cuid+'&submission='+submission;
+
+readStream.pipe(request.put(url, function (err, res, body) {
   if (err) {
     throw new Error(err);
   }
   console.log('res', res.body);
-});
- //
-readStream.pipe(req);
+}));

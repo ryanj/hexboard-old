@@ -13,6 +13,12 @@ Start a local server, passing in config via the environment:
 ACCESS_TOKEN=12345678 OPENSHIFT_SERVER=openshift.servername.com npm start
 ```
 
+After the server has started, submit some images:
+
+```bash
+OPENSHIFT_SERVER="http://localhost:8080" CUID="007" SUBMISSION="yes!" USERNAME="joe" node post_image.manual.js
+```
+
 ## Docker
 To run [the related docker image](https://registry.hub.docker.com/u/ryanj/commander-1k/):
 
