@@ -22,7 +22,7 @@ var config   = cc().add({
 var osv3_client = new kclient({
   host:  config.get('openshift_server'),
   protocol: 'https:',
-  version: 'v1beta2',
+  version: 'v1beta3',
   token: config.get('oauth_token')
 });
 
