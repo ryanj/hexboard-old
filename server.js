@@ -231,9 +231,6 @@ app.get("/containers/_changes", function (req, res, next) {
 app.get("/containers/id", function (req, res, next) {
   res.send("{status: 'ok'}")
 })
-app.put("/containers/", function (req, res, next) {
-  res.send("{status: 'ok'}")
-}
 
 // TODO: add the hex dashboard here:
 // 
