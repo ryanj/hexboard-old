@@ -48,23 +48,23 @@ function verifyPodAvailable(pod, retries_remaining){
   //verify that the app is responding to web requests
   //retry up to N times
   console.log("live: " + pod.data.name);
-  eventEmitter.emit('pod-live', pod.data);
+  eventEmitter.emit('pod-event', pod.data);
 }
 function parseAddPod(pod){
   pod.data.state = 1;
   console.log("added: " + pod.data.name)
-  eventEmitter.emit('pod-requested', pod.data);
+  eventEmitter.emit('pod-event', pod.data);
 }
 
 function parseUpdatePod(pod){
   pod.data.state = 2;
   console.log("pending: " + pod.data.name)
-  eventEmitter.emit('pod-pending', pod.data);
+  eventEmitter.emit('pod-event', pod.data);
 }
 function parseDeletePod(pod){
   pod.data.state = 3;
   console.log("ready: " + pod.data.name);
-  eventEmitter.emit('pod-ready', pod.data);
+  eventEmitter.emit('pod-event', pod.data);
   verifyPodAvailable(pod, 0);
 }
 function replay(){
@@ -183,29 +183,6 @@ var receiveImage = function(req, res, next) {
       });
     })
   });
-  req.on('end', function() {
-    var filename = 'doodle.png';
-    fs.open('./static/img/' + filename, 'w', function(err, fd) {
-      if (err) {
-        next(err);
-      };
-      fs.write(fd, data, 0, data.length, 0, function(err, written, buffer) {
-        if (err) {
-          next(err);
-        };
-        var doodle = {
-          url: 'http://localhost'+'/img/doodle.png'
-        , username: req.query.username
-        , cuid: req.query.cuid
-        , containerId: req.query.cuid
-        , submission: req.query.submission
-        }
-        console.log(doodle);
-        eventEmitter.emit('new-doodle', doodle)
-        return res.json(doodle)
-      });
-    })
-  });
 }
 
 
@@ -289,6 +266,10 @@ ws.onclose = function() {
 };
 });
 
+eventEmitter.on('pod-event', function(pod) {
+  console.log('pod event');
+  wss.broadcast(JSON.stringify({type: 'data', data: pod}));
+});
 eventEmitter.on('new-doodle', function(doodle) {
   console.log('doodle listener invoked.');
   //console.data(doodle);
