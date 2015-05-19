@@ -10,6 +10,7 @@
   "dependencies": {
     "config-multipaas": "^0.1.0",
     "node-kubernetes-client": "^0.1.9",
+    "qs": "^2.4.2",
     "request": "^2.55.0",
     "restify": "^3.0.2",
     "rx": "^2.5.2",

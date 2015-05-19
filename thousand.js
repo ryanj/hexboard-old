@@ -39,6 +39,7 @@ var doodles = Rx.Observable.range(0, 200)
         , url: '/thousand/doodles/' + images[getRandomInt(0, images.length)]
         , name: 'FirstName' + containerId + ' LastName' + containerId
         };
+        console.log(doodle)
         return doodle;
       })
       .delay(getRandomInt(0, 10000));
@@ -46,15 +47,17 @@ var doodles = Rx.Observable.range(0, 200)
 
 var randomDoodles = function(numDoodles) {
   var images = ['box-cartone.png', 'cherries.png', 'fairy.png', 'johnny-automatic-skateboard.png', 'kick-scouter3.png', 'papaya.png', 'paratrooper.png', 'Segelyacht.png', 'TheStructorr-cherries.png', 'unicycle.png'];
+  images=['cherries.png'];
   var doodles = Rx.Observable.range(0, numDoodles)
     .flatMap(function(x) {
       return Rx.Observable.range(0,1)
         .map(function() {
           var containerId = getRandomInt(0, 1026);
           var doodle = {
-            containerId: containerId
-          , url: '/thousand/doodles/' + images[getRandomInt(0, images.length)]
-          , name: 'FirstName' + containerId + ' LastName' + containerId
+            url: 'http://localhost:8080/img/doodle.png'
+          , username: 'FirstName%20LastName'
+          , cuid: '001'
+          , subject: 'awesomeawesome'
           };
           return doodle;
         })

@@ -295,6 +295,10 @@ var openObserver = Rx.Observer.create(function(open) {
         lastPong = new Date().getTime();
         console.log("<<< PONG");
       }
+      if (message.type === 'event'){
+        console.log(message);
+        particle(points[message.id], message.stage);
+      }
     };
   })
   .subscribeOnError(function(error) {
@@ -308,11 +312,10 @@ var messages = Rx.DOM.fromWebSocket(d3demo.config.backend.ws + '/thousand', null
 }).share();
 
 messages.filter(function(message) {
-  return message.type === 'event';
+  return (message.data && message.data.type == 'event')
 })
 .tap(function(message) {
-  var event = message.data;
-  particle(points[event.id], event.stage);
+  particle(points[message.data.id], message.data.stage);
 }).subscribeOnError(errorObserver);
 
 messages.filter(function(message) {
@@ -320,7 +323,7 @@ messages.filter(function(message) {
 })
 .tap(function(message) {
   var doodle = message.data;
-  image(points[doodle.containerId], doodle);
+  image(points[doodle.cuid], doodle);
 }).subscribeOnError(errorObserver);
 
 var errorObserver = function(error) {
