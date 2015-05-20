@@ -55,6 +55,9 @@
                         "deploymentconfig": "APPNAME"
                     },
                     "podTemplate": {
+                        "nodeSelector": {
+                            "zone": "primary"
+                        },
                         "desiredState": {
                             "manifest": {
                                 "version": "v1beta2",
