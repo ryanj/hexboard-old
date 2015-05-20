@@ -2,6 +2,7 @@ var Rx = require('rx')
   , cc           = require('config-multipaas')
   , fs       = require('fs')
   , EventEmitter = require("events").EventEmitter
+  , request = require('request')
   ;
 
 var doodleEmitter = new EventEmitter();
