@@ -122,7 +122,7 @@ hex = (function dataSimulator(d3, Rx) {
   };
 
   function image(p, doodle) {
-    console.log('Adding doodle:', doodle.submissionId, 'for cuid: ', doodle.cuid); 
+    console.log('Adding doodle:', doodle.submissionId, 'for cuid: ', doodle.cuid);
     var c = {x: content.x / 2, y: content.y / 2};
     var perspective = 0.5
       , duration = 1000
@@ -178,7 +178,7 @@ hex = (function dataSimulator(d3, Rx) {
   })
   .tap(function(message) {
     var event = message.data;
-    particle(points[event.id], event.stage);
+    particle(points[parseInt(event.id)], event.stage);
   }).subscribeOnError(errorObserver);
 
   var messageSubscription = messages.filter(function(message) {
