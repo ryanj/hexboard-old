@@ -72,12 +72,6 @@ wss.on('connection', function connection(ws) {
   ws.id = id;
   console.log('/thousand connection');
   var subscription;
-  subscription = thousand.events.subscribe(function(event) {
-    if (ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify({type: 'event', data: event}));
-      //replay()
-    };
-  });
   ws.on('message', function(data, flags) {
     var message = JSON.parse(data);
     if (message.type === 'ping') {
