@@ -48,18 +48,18 @@ function verifyPodAvailable(pod, retries_remaining){
   doodleEmitter.emit('pod-event', pod.data);
 }
 function parseAddPod(pod){
-  pod.data.state = 1;
+  pod.data.stage = 1;
   console.log("added: " + pod.data.name)
   doodleEmitter.emit('pod-event', pod.data);
 }
 
 function parseUpdatePod(pod){
-  pod.data.state = 2;
+  pod.data.stage = 2;
   console.log("pending: " + pod.data.name)
   doodleEmitter.emit('pod-event', pod.data);
 }
 function parseDeletePod(pod){
-  pod.data.state = 3;
+  pod.data.stage = 3;
   console.log("ready: " + pod.data.name);
   doodleEmitter.emit('pod-event', pod.data);
   verifyPodAvailable(pod, 0);
@@ -84,7 +84,7 @@ var parseData = function(data){
         id: podNumber(update),
         name: podId(update),
         hostname: podId(update) + '-summit3.apps.summit.paas.ninja',
-        state: update.type,
+        stage: update.type,
         type: 'event'
       }
       if(update.type == 'ADDED'){
