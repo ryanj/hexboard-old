@@ -97,6 +97,6 @@ winner.winnerEmitter.on('action', function(action) {
 });
 
 eventEmitter.on('pod-event', function(pod) {
-  console.log('pod event');
+  console.log('pod event, id:', pod.id, 'stage:', pod.stage);
   wss.broadcast(JSON.stringify({type: 'event', data: pod}));
 });
