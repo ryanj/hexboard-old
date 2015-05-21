@@ -47,33 +47,26 @@ function verifyPodAvailable(pod, retries_remaining){
   console.log("live: " + pod.data.name);
   doodleEmitter.emit('pod-event', pod.data);
 }
-function parseAddPod(pod){
-  pod.data.stage = 1;
-  console.log("added: " + pod.data.name)
-  doodleEmitter.emit('pod-event', pod.data);
-}
 
-function parseUpdatePod(pod){
-  pod.data.stage = 2;
-  console.log("pending: " + pod.data.name)
-  doodleEmitter.emit('pod-event', pod.data);
-}
-function parseDeletePod(pod){
-  pod.data.stage = 3;
-  console.log("ready: " + pod.data.name);
-  doodleEmitter.emit('pod-event', pod.data);
-  verifyPodAvailable(pod, 0);
-}
-function replay(){
-  fs.readFile('./pods-create.log', function replay(err, data){
-    if(err){
-      throw err
-    }
-    data.toString().split('\n').forEach(function(update){
-      parseData(update);
-    });
+var rxReadfile = Rx.Observable.fromNodeCallback(fs.readFile);
+
+var logEvents = rxReadfile('./pods-create.log')
+  .flatMap(function(data) {
+    return data.toString().split('\n');
+  })
+  .map(function(update) {
+    return parseData(update);
   });
-}
+
+var replay = Rx.Observable.zip(
+  logEvents
+, Rx.Observable.interval(200)
+, function(podEvent, index) { return podEvent}
+).tap(function(parsed) {
+  if (parsed && parsed.data && parsed.data.stage) {
+    doodleEmitter.emit('pod-event', parsed.data);
+  };
+})
 
 var parseData = function(data){
   if(data){
@@ -88,13 +81,13 @@ var parseData = function(data){
         type: 'event'
       }
       if(update.type == 'ADDED'){
-        parseAddPod(update)
+        update.data.stage = 1;
       }
       else if(update.type == 'MODIFIED'){
-        parseUpdatePod(update)
+        update.data.stage = 2;
       }
       else if(update.type == 'DELETED'){
-        parseDeletePod(update)
+        update.data.stage = 3;
       }else{
         console.log("New data type found:" + JSON.stringify(update))
         //console.log('\n');
@@ -108,6 +101,7 @@ var parseData = function(data){
       //persist pod state
       pod_statuses[update.data.id] = update.data
     }
+    return update;
   }
 }
 
@@ -126,7 +120,9 @@ if (process.env.ACCESS_TOKEN){
   //.pipe(fs.createWriteStream('pods.log'))
 }else{
   //replay a previous data stream
-  replay();
+  replay.subscribeOnError(function(err) {
+    console.log(err.stack || err);
+  });
 }
 
 // Returns a random integer between min included) and max (excluded)

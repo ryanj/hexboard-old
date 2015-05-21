@@ -30,7 +30,9 @@ app.put('/doodle', doodles.receive);
 app.get('/status', function (req, res, next) { res.send("{status: 'ok'}"); });
 
 app.get("/containers", function (req, res, next) {
-  thousand.replay()
+  thousand.replay.subscribeOnError(function(err) {
+    console.log(err.stack || err);
+  });
   res.send("ok");
 })
 
