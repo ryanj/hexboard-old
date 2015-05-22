@@ -1,12 +1,11 @@
 var Rx = require('rx')
-  , cc           = require('config-multipaas')
-  , fs       = require('fs')
-  , EventEmitter = require("events").EventEmitter
+  , cc = require('config-multipaas')
+  , fs = require('fs')
+  , thousandEmitter = require('./thousandEmitter')
   , request = require('request')
   ;
 
-var doodleEmitter = new EventEmitter();
-var tag = 'THOUSAND';
+var tag = 'POD';
 var pod_statuses = []
 var submissionCount = 0;
 
@@ -45,7 +44,7 @@ function verifyPodAvailable(pod, retries_remaining){
   //verify that the app is responding to web requests
   //retry up to N times
   console.log("live: " + pod.data.name);
-  doodleEmitter.emit('pod-event', pod.data);
+  thousandEmitter.emit('pod-event', pod.data);
 }
 
 var rxReadfile = Rx.Observable.fromNodeCallback(fs.readFile);
@@ -64,7 +63,7 @@ var replay = Rx.Observable.zip(
 , function(podEvent, index) { return podEvent}
 ).tap(function(parsed) {
   if (parsed && parsed.data && parsed.data.stage) {
-    doodleEmitter.emit('pod-event', parsed.data);
+    thousandEmitter.emit('pod-event', parsed.data);
   };
 })
 
@@ -125,57 +124,6 @@ if (process.env.ACCESS_TOKEN){
   });
 }
 
-// Returns a random integer between min included) and max (excluded)
-var getRandomInt = function (min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
-};
-
-var events2 = Rx.Observable.range(0, 1026)
-  .flatMap(function(index) {
-    var delay = 0;
-    return Rx.Observable.range(1, 4) // 5 states
-      .flatMap(function(stage) {
-        delay += getRandomInt(2000, 3000);
-        return Rx.Observable.range(0,1)
-          .map(function() {
-            return {
-              id: index
-            , stage: stage
-            };
-          })
-          .delay(delay);
-      })
-  })
-
-var images = ['box-cartone.png', 'cherries.png', 'fairy.png', 'johnny-automatic-skateboard.png', 'kick-scouter3.png', 'papaya.png', 'paratrooper.png', 'Segelyacht.png', 'TheStructorr-cherries.png', 'unicycle.png'];
-
-var submissionCount = 0;
-
-var randomDoodles = function(numDoodles) {
-  var doodles = Rx.Observable.range(0, numDoodles)
-    .flatMap(function(x) {
-      var imageIndex = getRandomInt(0, 13);
-      return Rx.Observable.range(0,1)
-        .map(function() {
-          var containerId = getRandomInt(0, 1026);
-          var doodle = {
-            containerId: containerId
-          , url: '/thousand/doodles/thousand-doodle' + imageIndex + '.png'
-          , name: 'FirstName' + containerId + ' LastName' + containerId
-          , cuid: imageIndex
-          , submissionId: submissionCount++
-          };
-          return doodle;
-        })
-        .delay(getRandomInt(0, 1000));
-    });
-  return doodles;
-}
-
-
 module.exports = {
-  events : events2
-, replay : replay
-, randomDoodles: randomDoodles
-, doodleEmitter: doodleEmitter
+  replay : replay
 };

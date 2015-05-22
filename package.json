@@ -24,7 +24,7 @@
     "url": "https://github.com/ryanj/commander-1k.git"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server/server.js"
   },
   "license": "CC0",
   "main": "server.js"

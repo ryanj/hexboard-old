@@ -1,10 +1,12 @@
-var thousand = require('./thousand')
+var random = require('./random')
+ , thousandEmitter = require('./thousandEmitter')
+ ;
 
 var randomDoodles = function(req, res, next) {
   var numDoodles = req.params.numDoodles;
-  thousand.randomDoodles(numDoodles)
+  random.randomDoodles(numDoodles)
     .subscribe(function(doodle) {
-      thousand.eventEmitter.emit('new-doodle', doodle);
+      thousandEmitter.emit('new-doodle', doodle);
     }, function(error) {
       next(error)
     }, function() {
@@ -46,7 +48,7 @@ var receiveImage = function(req, res, next) {
         , submissionId: req.query.submission_id
         }
         console.log(doodle);
-        thousand.eventEmitter.emit('new-doodle', doodle)
+        thousandEmitter.emit('new-doodle', doodle)
         return res.json(doodle)
       });
     })
@@ -55,5 +57,5 @@ var receiveImage = function(req, res, next) {
 
 module.exports = {
   receive: receiveImage
-, randomd: randomDoodles
+, randomDoodles: randomDoodles
 };
