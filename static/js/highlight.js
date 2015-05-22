@@ -62,8 +62,11 @@ hex.highlight = (function dataSimulator(d3, Rx) {
     return closest;
   }
 
-  var getCandidates = function() {
+  var getCandidates = function(currentPoint) {
     return hex.points.filter(function(point) {
+      if (currentPoint && currentPoint.id === point.id) {
+        return true;
+      }
       if (point.doodle) {
         return ! hex.winner.isAlreadyWinner(point);
       } else {
@@ -73,13 +76,14 @@ hex.highlight = (function dataSimulator(d3, Rx) {
   }
 
   var moveHighlightHorizontally = function(direction) {  // -1 left, +1 right
-    var candidates = getCandidates();
+    var currentPoint = highlightedHexagon ? highlightedHexagon.datum() : null;
+    var candidates = getCandidates(currentPoint);
     if (candidates.length < 1) {
       return;
     };
+    var currentIndex = highlightedHexagon ? candidates.indexOf(currentPoint) : null;
     var start = direction > 0 ? 0 : candidates.length - 1
       , end = direction > 0 ? candidates.length - 1 : 0;
-    var currentIndex = highlightedHexagon ? candidates.indexOf(highlightedHexagon.datum()) : null;
     var newIndex;
     if (currentIndex === null || currentIndex === end) {
       newIndex = start;
@@ -90,13 +94,13 @@ hex.highlight = (function dataSimulator(d3, Rx) {
   };
 
   var moveHighlightVertically = function(direction) { // -1 up, +1 down
-    var candidates = getCandidates();
+    var currentPoint = highlightedHexagon ? highlightedHexagon.datum() : null;
+    var candidates = getCandidates(currentPoint);
     if (candidates.length < 1) {
       return;
     };
     var start = direction > 0 ? 0 : candidates.length - 1
       , end = direction > 0 ? candidates.length - 1 : 0;
-    var currentPoint = highlightedHexagon ? highlightedHexagon.datum() : null;
     var newId;
     if (! highlightedHexagon) {
       newId = candidates[start].id;

@@ -32,11 +32,11 @@ module.exports = function(server) {
     ws.id = id;
     console.log(tag, '/thousand connection');
     var subscription;
-    subscription = random.events.tap(function(event) {
-      if (ws.readyState === ws.OPEN) {
-        ws.send(JSON.stringify({type: 'event', data: event}));
-      };
-    })
+    // subscription = random.events.tap(function(event) {
+    //   if (ws.readyState === ws.OPEN) {
+    //     ws.send(JSON.stringify({type: 'event', data: event}));
+    //   };
+    // })
     // .subscribeOnError(function(err) {
     //   console.log(err.stack || err);
     // });

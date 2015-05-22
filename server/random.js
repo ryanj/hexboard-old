@@ -41,7 +41,7 @@ var randomDoodles = function(numDoodles) {
           var containerId = getRandomInt(0, 1026);
           var doodle = {
             containerId: containerId
-          , url: '/thousand/doodles/thousand-doodle' + imageIndex + '.png'
+          , url: '/doodles/thousand-doodle' + imageIndex + '.png'
           , name: 'FirstName' + containerId + ' LastName' + containerId
           , cuid: imageIndex
           , submissionId: submissionCount++
