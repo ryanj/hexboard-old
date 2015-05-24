@@ -111,11 +111,13 @@ var parseData = function(data){
   }
 }
 
-if (process.env.ACCESS_TOKEN){
+
+
+var getLiveStream = function() {
   console.log('options', options);
   var stream = request(options);
   //.pipe(fs.createWriteStream('pods.log'))
-  Rx.Observable.create(function(observable) {
+  return Rx.Observable.create(function(observable) {
     // manually create the observable, so we can join incomplete messages
     var oldData = [];
     stream.on('data', function(data) {
@@ -139,20 +141,18 @@ if (process.env.ACCESS_TOKEN){
   })
   .map(function(data) {
     return parseData(data);
-  }).tap(function(parsed) {
-    if (parsed && parsed.data && parsed.data.stage) {
-      thousandEmitter.emit('pod-event', parsed.data);
-    };
-  }).subscribeOnError(function(err) {
-    console.log(err.stack || err);
+  }).filter(function(parsed) {
+    return parsed && parsed.data && parsed.data.stage;
+  }).map(function(parsed) {
+    return parsed.data;
   });
-}else{
-  //replay a previous data stream
-  replay.subscribeOnError(function(err) {
-    console.log(err.stack || err);
-  });
-}
+};
+
+var podEventFeed = function () {
+  return process.env.ACCESS_TOKEN ? getLiveStream() : replay;
+};
 
 module.exports = {
-  replay : replay
+  events: podEventFeed
+, replay : replay
 };
