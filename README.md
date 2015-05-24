@@ -13,6 +13,13 @@ Start a local server, passing in config via the environment:
 ACCESS_TOKEN=12345678 OPENSHIFT_SERVER=openshift.servername.com npm start
 ```
 
+Create 1000 doodlepods:
+
+```bash
+for x in $(cat 1k_app_names) ; do cat app_template.json | sed -e "s/APPNAME/$x/g" | osc create -f - ; done
+```
+
+
 After the server has started, submit some images:
 
 ```bash
