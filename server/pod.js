@@ -136,7 +136,8 @@ var getLiveStream = function() {
       observable.onError(data);
     });
     stream.on('end', function() {
-      observer.onCompleted();
+      console.log('stream ended');
+      observable.onCompleted();
     })
   })
   .map(function(data) {
