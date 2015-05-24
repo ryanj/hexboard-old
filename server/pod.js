@@ -1,4 +1,5 @@
 var Rx = require('rx')
+  , RxNode = require('rx-node')
   , cc = require('config-multipaas')
   , fs = require('fs')
   , thousandEmitter = require('./thousandEmitter')
@@ -111,18 +112,19 @@ var parseData = function(data){
 
 if (process.env.ACCESS_TOKEN){
   console.log('options', options);
-  request(options, function(error, response, body){
+  var stream = request(options, function(error, response, body){
     if(error){
       console.log("err:"+ err)
     }
   })
-  .on('data', function(data) {
-    parseData(data);
-  })
-  .on('error', function(err) {
-    console.log("err:"+ err)
-  }) // log the data stream
   //.pipe(fs.createWriteStream('pods.log'))
+  RxNode.fromStream(stream).map(function(data) {
+    return parseData(update);
+  }).tap(function(parsed) {
+    if (parsed && parsed.data && parsed.data.stage) {
+      thousandEmitter.emit('pod-event', parsed.data);
+    };
+  })
 }else{
   //replay a previous data stream
   replay.subscribeOnError(function(err) {
