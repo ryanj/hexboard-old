@@ -19,7 +19,7 @@ var config   = cc().add({
 // Allow self-signed SSL
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-var url = 'https://' + config.get('openshift_server') + ':8443/api/v1beta2/watch/pods'
+var url = 'https://' + config.get('openshift_server') + '/api/v1beta2/watch/pods'
 var options = {
   'method' : 'get'
  ,'uri'    : url
@@ -69,7 +69,12 @@ var replay = Rx.Observable.zip(
 
 var parseData = function(data){
   if(data){
-    var update = JSON.parse(data);
+    try {
+      var update = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+      console.log('data:', data.toString('utf8'));
+    }
     if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
       //bundle the pod data
       update.data = {
@@ -105,6 +110,7 @@ var parseData = function(data){
 }
 
 if (process.env.ACCESS_TOKEN){
+  console.log('options', options);
   request(options, function(error, response, body){
     if(error){
       console.log("err:"+ err)
