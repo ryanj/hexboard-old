@@ -1,4 +1,6 @@
 var Rx = require('rx')
+  , RxNode = require('rx-node')
+  , split = require('split')
   , cc = require('config-multipaas')
   , fs = require('fs')
   , thousandEmitter = require('./thousandEmitter')
@@ -67,79 +69,47 @@ var replay = Rx.Observable.zip(
   };
 })
 
-var parseData = function(data){
-  if(data){
-    try {
-      var update = JSON.parse(data);
-    } catch (error) {
-      console.error('********************', error);
-      console.log('data:', data.toString('utf8'));
-      console.error('/********************');
-      return
+var parseData = function(update){
+  if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
+    //bundle the pod data
+    update.data = {
+      id: podNumber(update),
+      name: podId(update),
+      hostname: podId(update) + '-summit3.apps.summit.paas.ninja',
+      stage: update.type,
+      type: 'event'
     }
-    if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
-      //bundle the pod data
-      update.data = {
-        id: podNumber(update),
-        name: podId(update),
-        hostname: podId(update) + '-summit3.apps.summit.paas.ninja',
-        stage: update.type,
-        type: 'event'
-      }
-      if(update.type == 'ADDED'){
-        update.data.stage = 1;
-      }
-      else if(update.type == 'MODIFIED'){
-        update.data.stage = 2;
-      }
-      else if(update.type == 'DELETED'){
-        update.data.stage = 3;
-      }else{
-        console.log("New data type found:" + JSON.stringify(update))
-        //console.log('\n');
-        //console.log("update_type: "+update.type)
-        //console.log("name: "+update.object.desiredState.manifest.containers[0].name)
-        //console.log("status: "+ update.object.status)
-        //console.log('\n');
-        //console.log("update id:"+update.object.id);
-        //console.log("data:"+JSON.stringify(update));
-      }
-      //persist pod state
-      pod_statuses[update.data.id] = update.data
+    if(update.type == 'ADDED'){
+      update.data.stage = 1;
     }
-    return update;
+    else if(update.type == 'MODIFIED'){
+      update.data.stage = 2;
+    }
+    else if(update.type == 'DELETED'){
+      update.data.stage = 3;
+    }else{
+      console.log("New data type found:" + JSON.stringify(update))
+      //console.log('\n');
+      //console.log("update_type: "+update.type)
+      //console.log("name: "+update.object.desiredState.manifest.containers[0].name)
+      //console.log("status: "+ update.object.status)
+      //console.log('\n');
+      //console.log("update id:"+update.object.id);
+      //console.log("data:"+JSON.stringify(update));
+    }
+    //persist pod state
+    pod_statuses[update.data.id] = update.data
   }
+  return update;
 }
-
-
 
 var getLiveStream = function() {
   console.log('options', options);
   var stream = request(options);
-  //.pipe(fs.createWriteStream('pods.log'))
-  return Rx.Observable.create(function(observable) {
-    // manually create the observable, so we can join incomplete messages
-    var oldData = new Buffer('');
-    stream.on('data', function(data) {
-      data = (oldData.length) ? Buffer.concat([oldData, data]) : data;
-      try {
-        JSON.parse(data); // see if we can parse the data
-        oldData = new Buffer('');
-        observable.onNext(data);
-      } catch (error) {
-        oldData = data; // stack parse failures for later concatentation
-      }
-    });
-    stream.on('error', function(error) {
-      observable.onError(data);
-    });
-    stream.on('end', function() {
-      console.log('stream ended');
-      observable.onCompleted();
-    })
-  })
+  return RxNode.fromStream(stream.pipe(split()))
   .map(function(data) {
-    return parseData(data);
+    console.log(data.toString());
+    return parseData(JSON.parse(data));
   }).filter(function(parsed) {
     return parsed && parsed.data && parsed.data.stage;
   }).map(function(parsed) {
