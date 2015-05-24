@@ -75,6 +75,7 @@ var parseData = function(data){
     } catch (error) {
       console.log(error);
       console.log('data:', data.toString('utf8'));
+      throw error;
     }
     if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
       //bundle the pod data
@@ -113,18 +114,23 @@ var parseData = function(data){
 if (process.env.ACCESS_TOKEN){
   console.log('options', options);
   var stream = request(options, function(error, response, body){
+    console.log('body:', body);
     if(error){
       console.log("err:"+ err)
     }
   })
   //.pipe(fs.createWriteStream('pods.log'))
   RxNode.fromStream(stream).map(function(data) {
-    return parseData(update);
+    // console.log(data);
+    return parseData(data);
   }).tap(function(parsed) {
+    console.log(parsed);
     if (parsed && parsed.data && parsed.data.stage) {
       thousandEmitter.emit('pod-event', parsed.data);
     };
-  })
+  }).subscribeOnError(function(err) {
+    console.log(err.stack || err);
+  });
 }else{
   //replay a previous data stream
   replay.subscribeOnError(function(err) {
