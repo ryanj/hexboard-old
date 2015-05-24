@@ -108,7 +108,6 @@ var getLiveStream = function() {
   var stream = request(options);
   return RxNode.fromStream(stream.pipe(split()))
   .map(function(data) {
-    console.log(data.toString());
     return parseData(JSON.parse(data));
   }).filter(function(parsed) {
     return parsed && parsed.data && parsed.data.stage;
