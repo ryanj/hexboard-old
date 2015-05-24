@@ -14,6 +14,7 @@
     "request": "^2.55.0",
     "restify": "^3.0.2",
     "rx": "^2.5.2",
+    "split": "^0.3.3",
     "ws": "^0.7.1"
   },
   "devDependencies": {
