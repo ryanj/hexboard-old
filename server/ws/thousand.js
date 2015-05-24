@@ -40,6 +40,13 @@ module.exports = function(server) {
     // .subscribeOnError(function(err) {
     //   console.log(err.stack || err);
     // });
+    subscription = pod.events().tap(function(pod) {
+      console.log('pod event, id:', pod.id, 'stage:', pod.stage);
+      ws.send(JSON.stringify({type: 'event', data: pod}));
+    })
+    .subscribeOnError(function(err) {
+      console.log(err.stack || err);
+    });
     ws.on('message', function(data, flags) {
       var message = JSON.parse(data);
       if (message.type === 'ping') {
@@ -60,10 +67,5 @@ module.exports = function(server) {
   thousandEmitter.on('action', function(action) {
     console.log(tag, 'winner listener invoked.');
     wss.broadcast(JSON.stringify({type: 'winner', data: action}));
-  });
-
-  thousandEmitter.on('pod-event', function(pod) {
-    console.log('pod event, id:', pod.id, 'stage:', pod.stage);
-    wss.broadcast(JSON.stringify({type: 'event', data: pod}));
   });
 };
