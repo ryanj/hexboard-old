@@ -1,5 +1,4 @@
 var Rx = require('rx')
-  , RxNode = require('rx-node')
   , cc = require('config-multipaas')
   , fs = require('fs')
   , thousandEmitter = require('./thousandEmitter')
@@ -73,9 +72,10 @@ var parseData = function(data){
     try {
       var update = JSON.parse(data);
     } catch (error) {
-      console.log(error);
+      console.error('********************', error);
       console.log('data:', data.toString('utf8'));
-      throw error;
+      console.error('/********************');
+      return
     }
     if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
       //bundle the pod data
@@ -113,18 +113,33 @@ var parseData = function(data){
 
 if (process.env.ACCESS_TOKEN){
   console.log('options', options);
-  var stream = request(options, function(error, response, body){
-    console.log('body:', body);
-    if(error){
-      console.log("err:"+ err)
-    }
-  })
+  var stream = request(options);
   //.pipe(fs.createWriteStream('pods.log'))
-  RxNode.fromStream(stream).map(function(data) {
-    // console.log(data);
+  Rx.Observable.create(function(observable) {
+    // manually create the observable, so we can join incomplete messages
+    var oldData = [];
+    stream.on('data', function(data) {
+      if (oldData.length) {
+        data = oldData.join('') + data;
+      }
+      try {
+        JSON.parse(data); // see if we can parse the data
+        oldData = [];
+        observable.onNext(data);
+      } catch (error) {
+        oldData.push(data); // stack parse failures for later concatentation
+      }
+    });
+    stream.on('error', function(error) {
+      observable.onError(data);
+    });
+    stream.on('end', function() {
+      observer.onCompleted();
+    })
+  })
+  .map(function(data) {
     return parseData(data);
   }).tap(function(parsed) {
-    console.log(parsed);
     if (parsed && parsed.data && parsed.data.stage) {
       thousandEmitter.emit('pod-event', parsed.data);
     };
