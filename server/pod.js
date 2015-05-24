@@ -119,17 +119,15 @@ var getLiveStream = function() {
   //.pipe(fs.createWriteStream('pods.log'))
   return Rx.Observable.create(function(observable) {
     // manually create the observable, so we can join incomplete messages
-    var oldData = [];
+    var oldData = new Buffer('');
     stream.on('data', function(data) {
-      if (oldData.length) {
-        data = oldData.join('') + data;
-      }
+      data = (oldData.length) ? Buffer.concat([oldData, data]) : data;
       try {
         JSON.parse(data); // see if we can parse the data
-        oldData = [];
+        oldData = new Buffer('');
         observable.onNext(data);
       } catch (error) {
-        oldData.push(data); // stack parse failures for later concatentation
+        oldData = data; // stack parse failures for later concatentation
       }
     });
     stream.on('error', function(error) {
