@@ -27,6 +27,7 @@ module.exports = function(server) {
     };
   };
 
+  console.log('ACCESS_TOKEN', process.env.ACCESS_TOKEN);
   var eventFeed = process.env.ACCESS_TOKEN ? pod.events : playback.events
 
   wss.on('connection', function connection(ws) {
