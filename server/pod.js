@@ -49,26 +49,6 @@ function verifyPodAvailable(pod, retries_remaining){
   thousandEmitter.emit('pod-event', pod.data);
 }
 
-var rxReadfile = Rx.Observable.fromNodeCallback(fs.readFile);
-
-var logEvents = rxReadfile('./pods-create.log')
-  .flatMap(function(data) {
-    return data.toString().split('\n');
-  })
-  .map(function(update) {
-    return parseData(update);
-  });
-
-var replay = Rx.Observable.zip(
-  logEvents
-, Rx.Observable.interval(200)
-, function(podEvent, index) { return podEvent}
-).tap(function(parsed) {
-  if (parsed && parsed.data && parsed.data.stage) {
-    thousandEmitter.emit('pod-event', parsed.data);
-  };
-})
-
 var parseData = function(update){
   if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
     //bundle the pod data
@@ -77,7 +57,8 @@ var parseData = function(update){
       name: podId(update),
       hostname: podId(update) + '-summit3.apps.summit.paas.ninja',
       stage: update.type,
-      type: 'event'
+      type: 'event',
+      creationTimestamp: new Date(update.object.creationTimestamp)
     }
     if(update.type == 'ADDED'){
       update.data.stage = 1;
@@ -106,6 +87,7 @@ var parseData = function(update){
 var getLiveStream = function() {
   console.log('options', options);
   var stream = request(options);
+  // stream.pipe(fs.createWriteStream('pods-create.log'));
   return RxNode.fromStream(stream.pipe(split()))
   .map(function(data) {
     return parseData(JSON.parse(data));
@@ -117,10 +99,22 @@ var getLiveStream = function() {
 };
 
 var podEventFeed = function () {
-  return process.env.ACCESS_TOKEN ? getLiveStream() : replay;
+  if (process.env.ACCESS_TOKEN) {
+    console.log('live');
+    return getLiveStream();
+  } else {
+    console.log('replaying');
+    logEvents.subscribeOnError(function(err) {
+      console.log(err.stack || err);
+    });
+    replayProgress.subscribeOnError(function(err) {
+      console.log(err.stack || err);
+    });
+    return replay;
+  }
 };
 
 module.exports = {
   events: podEventFeed
-, replay : replay
+, parseData : parseData
 };

@@ -14,7 +14,10 @@
     "request": "^2.55.0",
     "restify": "^3.0.2",
     "rx": "^2.5.2",
+    "sort-stream2": "^1.0.0",
     "split": "^0.3.3",
+    "stream-filter": "^1.0.0",
+    "through2": "^0.6.5",
     "ws": "^0.7.1"
   },
   "devDependencies": {
