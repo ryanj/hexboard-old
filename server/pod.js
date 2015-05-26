@@ -21,7 +21,7 @@ var config   = cc().add({
 // Allow self-signed SSL
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-var url = 'https://' + config.get('openshift_server') + '/api/v1beta2/watch/pods'
+var url = 'https://' + config.get('openshift_server') + '/api/v1beta3/watch/pods'
 var options = {
   'method' : 'get'
  ,'uri'    : url
@@ -35,12 +35,9 @@ function podIdToURL(id){
   return "doodle-"+id+"-app-summit3.apps.summit.paas.ninja"
 }
 
-function podId(pod){
-  return pod.object.desiredState.manifest.containers[0].name
-}
-function podNumber(pod){
-  var num = pod.object.desiredState.manifest.containers[0].name.match(/[0-9][0-9]*/)
-  return num[0]
+function podNumber(name){
+  var num = name.match(/[0-9][0-9]*/);
+  return num[0];
 }
 function verifyPodAvailable(pod, retries_remaining){
   //verify that the app is responding to web requests
@@ -49,35 +46,19 @@ function verifyPodAvailable(pod, retries_remaining){
   thousandEmitter.emit('pod-event', pod.data);
 }
 
-var rxReadfile = Rx.Observable.fromNodeCallback(fs.readFile);
-
-var logEvents = rxReadfile('./pods-create.log')
-  .flatMap(function(data) {
-    return data.toString().split('\n');
-  })
-  .map(function(update) {
-    return parseData(update);
-  });
-
-var replay = Rx.Observable.zip(
-  logEvents
-, Rx.Observable.interval(200)
-, function(podEvent, index) { return podEvent}
-).tap(function(parsed) {
-  if (parsed && parsed.data && parsed.data.stage) {
-    thousandEmitter.emit('pod-event', parsed.data);
-  };
-})
-
 var parseData = function(update){
-  if(update.object.desiredState.manifest.containers[0].name != 'deployment'){
+  var podName = update.object.spec.containers[0].name;
+  if (podName.indexOf('doodle') !== 0) {
+    console.log('Ignoring update for container name:', update.object.spec.containers[0].name);
+  } else {
     //bundle the pod data
     update.data = {
-      id: podNumber(update),
-      name: podId(update),
-      hostname: podId(update) + '-summit3.apps.summit.paas.ninja',
+      id: podNumber(podName),
+      name: podName,
+      hostname: podName + '-summit3.apps.summit.paas.ninja',
       stage: update.type,
-      type: 'event'
+      type: 'event',
+      creationTimestamp: new Date(update.object.metadata.creationTimestamp)
     }
     if(update.type == 'ADDED'){
       update.data.stage = 1;
@@ -106,10 +87,18 @@ var parseData = function(update){
 var getLiveStream = function() {
   console.log('options', options);
   var stream = request(options);
+  // stream.pipe(fs.createWriteStream('pods-create.log'));
   return RxNode.fromStream(stream.pipe(split()))
   .map(function(data) {
-    console.log(data.toString());
-    return parseData(JSON.parse(data));
+    // console.log(JSON.stringify(JSON.parse(data), null, 4));
+    try {
+      var parsed = parseData(JSON.parse(data));
+      return parsed;
+    } catch (error) {
+      console.log(error);
+      console.log(JSON.stringify(JSON.parse(data), null, 4));
+      throw error;
+    }
   }).filter(function(parsed) {
     return parsed && parsed.data && parsed.data.stage;
   }).map(function(parsed) {
@@ -118,10 +107,22 @@ var getLiveStream = function() {
 };
 
 var podEventFeed = function () {
-  return process.env.ACCESS_TOKEN ? getLiveStream() : replay;
+  if (process.env.ACCESS_TOKEN) {
+    console.log('live');
+    return getLiveStream();
+  } else {
+    console.log('replaying');
+    logEvents.subscribeOnError(function(err) {
+      console.log(err.stack || err);
+    });
+    replayProgress.subscribeOnError(function(err) {
+      console.log(err.stack || err);
+    });
+    return replay;
+  }
 };
 
 module.exports = {
   events: podEventFeed
-, replay : replay
+, parseData : parseData
 };

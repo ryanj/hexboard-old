@@ -3,6 +3,7 @@
 var WebSocketServer = require('ws').Server
   , random = require('../random')
   , pod = require('../pod')
+  , playback = require('../playback')
   , thousandEmitter = require('../thousandEmitter')
   ;
 
@@ -26,6 +27,9 @@ module.exports = function(server) {
     };
   };
 
+  console.log('ACCESS_TOKEN', process.env.ACCESS_TOKEN);
+  var eventFeed = process.env.ACCESS_TOKEN ? pod.events : playback.events
+
   wss.on('connection', function connection(ws) {
     var id = count++;
     clients[id] = ws;
@@ -40,8 +44,8 @@ module.exports = function(server) {
     // .subscribeOnError(function(err) {
     //   console.log(err.stack || err);
     // });
-    subscription = pod.events().tap(function(pod) {
-      console.log('pod event, id:', pod.id, 'stage:', pod.stage);
+    subscription = eventFeed().tap(function(pod) {
+      console.log('pod event, id:', pod.id, 'stage:', pod.stage, 'creationTimestamp', pod.creationTimestamp);
       ws.send(JSON.stringify({type: 'event', data: pod}));
     })
     .subscribeOnError(function(err) {
