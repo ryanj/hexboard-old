@@ -29,7 +29,8 @@
     "url": "https://github.com/ryanj/commander-1k.git"
   },
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "create-pods": "for x in $(seq 0 1024) ; do cat app_template.json | sed -e \"s/APPNAME/doodle-$x-pod/g\" | osc create -f - ; done"
   },
   "license": "CC0",
   "main": "server.js"
