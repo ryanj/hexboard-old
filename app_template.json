@@ -30,7 +30,7 @@
             "metadata": {
                 "name": "APPNAME"
             },
-            "host": "APPNAME-summit3.apps.summit.paas.ninja",
+            "host": "APPNAME-APP_ROOT_URL",
             "serviceName": "APPNAME"
         },
         {
@@ -56,7 +56,7 @@
                     },
                     "podTemplate": {
                         "nodeSelector": {
-                            "zone": "primary"
+                            "region": "primary"
                         },
                         "desiredState": {
                             "manifest": {
