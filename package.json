@@ -34,5 +34,5 @@
     "create-pods": "for x in $(seq 0 $INSTANCE_COUNT) ; do cat app_template.json | sed -e \"s/APPNAME/sketch-$x-pod/g\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | osc create -f - ; done"
   },
   "license": "CC0",
-  "main": "server.js"
+  "main": "server/server.js"
 }
