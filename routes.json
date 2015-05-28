@@ -1,0 +1,34 @@
+{
+    "kind": "List",
+    "creationTimestamp": null,
+    "apiVersion": "v1beta1",
+    "items": [
+        {
+            "kind": "Route",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "commander-1k-route1"
+            },
+            "host": "1k.jbosskeynote.com",
+            "serviceName": "commander-1k"
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "commander-1k-route2"
+            },
+            "host": "1k-commander-summit3.apps.summit.paas.ninja",
+            "serviceName": "commander-1k"
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "commander-1k-route3"
+            },
+            "host": "commander-1k-summit3.apps.summit.paas.ninja",
+            "serviceName": "commander-1k"
+        }
+    ]
+}
