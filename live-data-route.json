@@ -1,0 +1,9 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta1",
+  "metadata": {
+    "name": "sketchpod-route"
+  },
+  "host": "sketch-1-pod-demo1.apps.summit2.paas.ninja",
+  "serviceName": "sketchpod"
+}

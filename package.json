@@ -30,8 +30,10 @@
   },
   "scripts": {
     "start": "node server/server.js",
+    "create-replicas": "cat replica_template.json | sed -e \"s/REPLICA_COUNT/$REPLICA_COUNT/\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | sed -e \"s/APPNAME/$APPNAME/g\" | osc create -f -",
+    "dont-create-replicas": "cat replica_template.json | sed -e \"s/REPLICA_COUNT/$REPLICA_COUNT/\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | sed -e \"s/APPNAME/$APPNAME/g\"",
     "dont-create-pods": "for x in $(seq 0 $INSTANCE_COUNT) ; do cat app_template.json | sed -e \"s/APPNAME/sketch-$x-pod/g\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" ; done",
-    "create-pods": "for x in $(seq 0 $INSTANCE_COUNT) ; do cat app_template.json | sed -e \"s/APPNAME/sketch-$x-pod/g\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | osc create -f - ; done"
+    "create-pods": "for x in $(seq 0 $INSTANCE_COUNT) ; do cat app_template.json | sed -e \"s/APPNAME/doodle-$x-pod/g\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | osc create --config='./client_config' -f - ; done"
   },
   "license": "CC0",
   "main": "server/server.js"

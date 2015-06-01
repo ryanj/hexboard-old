@@ -31,11 +31,11 @@ if (process.env.ACCESS_TOKEN){
   //  console.log('err:', err);
   //  console.log('pods:', pods);
   //});
-  var url = 'https://' + config.get('openshift_server') + ':8443/api/v1beta2/watch/pods'
+  var url = 'https://' + config.get('openshift_server') + ':8443/api/v1beta3/watch/pods'
   var options = {
     'method' : 'get'
    ,'uri'    : url 
-   ,'qs'     : {'namespace': namespace}
+   ,'qs'     : {'namespace': namespace, 'watch': "true"}
    ,'rejectUnauthorized': false
    ,'strictSSL': false
    ,'auth'   : {'bearer': config.get('oauth_token') }
