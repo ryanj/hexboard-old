@@ -4,6 +4,6 @@
   "metadata": {
     "name": "sketchpod-route"
   },
-  "host": "sketch-1-pod-demo1.apps.summit2.paas.ninja",
+  "host": "sketchpod-demo1.apps.summit2.paas.ninja",
   "serviceName": "sketchpod"
 }
