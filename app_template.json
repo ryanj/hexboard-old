@@ -30,7 +30,7 @@
             "metadata": {
                 "name": "APPNAME"
             },
-            "host": "APPNAME-APP_ROOT_URL",
+            "host": "APPNAME.APP_ROOT_URL",
             "serviceName": "APPNAME"
         },
         {
@@ -50,14 +50,11 @@
                     "type": "Recreate"
                 },
                 "controllerTemplate": {
-                    "replicas": 1,
+                    "replicas": REPLICA_COUNT,
                     "replicaSelector": {
                         "deploymentconfig": "APPNAME"
                     },
                     "podTemplate": {
-                        "nodeSelector": {
-                            "region": "primary"
-                        },
                         "desiredState": {
                             "manifest": {
                                 "version": "v1beta2",
