@@ -1,4 +1,4 @@
-# commander-1k [![Dependency Check](http://img.shields.io/david/ryanj/commander-1k.svg)](https://david-dm.org/ryanj/commander-1k)
+# hexboard [![Dependency Check](http://img.shields.io/david/ryanj/hexboard.svg)](https://david-dm.org/ryanj/hexboard)
 
 ## Local Development
 Install dependencies:
@@ -13,12 +13,14 @@ Start a local server, passing in config via the environment:
 ACCESS_TOKEN=12345678 OPENSHIFT_SERVER=openshift.servername.com npm start
 ```
 
-Create 1000 doodlepods:
+Create 1000 sketchpods:
 
 ```bash
-for x in $(cat 1k_app_names) ; do cat app_template.json | sed -e "s/APPNAME/$x/g" | osc create -f - ; done
+export REPLICA_COUNT=1024 
+export APPNAME=sketchpod 
+export APP_ROOT_URL='PROJECTNAME.apps.YOUR_HOSTNAME'
+cat app_template.json | sed -e "s/REPLICA_COUNT/$REPLICA_COUNT/" | sed -e "s/APP_ROOT_URL/$APP_ROOT_URL/g" | sed -e "s/APPNAME/$APPNAME/g" | osc create -f -
 ```
-
 
 After the server has started, submit some images:
 
@@ -27,11 +29,11 @@ OPENSHIFT_SERVER="http://localhost:8080" CUID="007" SUBMISSION="yes!" USERNAME="
 ```
 
 ## Docker
-To run [the related docker image](https://registry.hub.docker.com/u/ryanj/commander-1k/):
+To run [the related docker image](https://registry.hub.docker.com/u/ryanj/hexboard/):
 
 ```bash
-docker pull ryanj/commander-1k
-docker run -d -p 8080:8080 -e "HOSTNAME=localhost" -e "ACCESS_TOKEN=00789101112" -e "OPENSHIFT_SERVER=openshift.servername.com" ryanj/commander-1k
+docker pull ryanj/hexboard
+docker run -d -p 8080:8080 -e "HOSTNAME=localhost" -e "ACCESS_TOKEN=00789101112" -e "OPENSHIFT_SERVER=openshift.servername.com" ryanj/hexboard
 ```
 
 ## OpenShiftV3
@@ -42,7 +44,7 @@ Make sure to include environment variables for the `OPENSHIFT_SERVER` and `ACCES
 Then, start a build from the CLI:
 
 ```bash
-osc start-build commander-1k
+osc start-build hexboard
 ```
 
 And, add public routes:
