@@ -4,16 +4,22 @@ var hex = hex || {};
 
 hex.controls = (function dataSimulator(d3, Rx) {
 
-  Rx.Observable.fromEvent(d3.select('#push-doodles').node(), 'click').subscribe(function() {
-    var xhr = d3.xhr('/api/doodle/random/10', function(err, res) {
+  Rx.Observable.fromEvent(d3.select('#push-sketches').node(), 'click').subscribe(function() {
+    var xhr = d3.xhr('/api/sketch/random/10', function(err, res) {
+      console.log(err || res);
+    });
+  });
+
+  Rx.Observable.fromEvent(d3.select('#remove-sketches').node(), 'click').subscribe(function() {
+    var xhr = d3.xhr('/api/sketch/all');
+    xhr.send('DELETE', function(err, res) {
+      console.log('removing all sketches');
       console.log(err || res);
     });
   });
 
   var winnerSocket = Rx.DOM.fromWebSocket(d3demo.config.backend.ws + '/winner');
-  winnerSocket.subscribeOnError(function(err) {
-    console.log(err.stack || err);
-  });
+  winnerSocket.subscribeOnError(hex.ui.errorHandler);
 
   // keyboard controls
   var keyboardSubscription = Rx.Observable.fromEvent(document.getElementsByTagName('body')[0], 'keyup')
@@ -24,7 +30,7 @@ hex.controls = (function dataSimulator(d3, Rx) {
   })
   .tap(function(event) {
     var newId;
-    var pushButton = document.getElementById('push-doodles');
+    var pushButton = document.getElementById('push-sketches');
     if (pushButton && pushButton === document.activeElement) {
       pushButton.blur();
     }
@@ -46,16 +52,16 @@ hex.controls = (function dataSimulator(d3, Rx) {
         break;
     };
   })
-  .subscribeOnError(hex.errorObserver);
+  .subscribeOnError(hex.ui.errorObserver);
 
   // websocket controls
-  var websocketSubscription = hex.messages.filter(function(message) {
+  var websocketSubscription = hex.ui.messages.filter(function(message) {
     return message.type === 'winner';
   }).tap(function(message) {
-    var doodlesPresent = hex.points.some(function(point) {
-      return !! point.doodle;
+    var sketchesPresent = hex.ui.points.some(function(point) {
+      return !! point.sketch;
     });
-    if (! doodlesPresent) {
+    if (! sketchesPresent) {
       return;
     }
     var action = message.data;
@@ -86,13 +92,13 @@ hex.controls = (function dataSimulator(d3, Rx) {
         hex.winner.pickWinner();
         break;
     };
-  }).subscribeOnError(hex.errorObserver);
+  }).subscribeOnError(hex.ui.errorObserver);
 
   // mouse controls
   var lastDoodle;
   var mouseSubscription = Rx.Observable.fromEvent(document.querySelector('.map'), 'mousemove')
   .filter(function(event) {
-    return event.target.classList.contains('doodle');
+    return event.target.classList.contains('sketch');
   })
   .tap(function(event) {
     var p = d3.select(event.target).datum();
@@ -100,22 +106,26 @@ hex.controls = (function dataSimulator(d3, Rx) {
       return;
     };
     var newId = p.id;
-    console.log('highlighting ', newId);
-    hex.highlight.highlight(newId);
+    console.log('inspecting ', newId);
+    hex.inspect.highlight(newId);
   })
-  .subscribeOnError(hex.errorObserver);
+  .subscribeOnError(hex.ui.errorObserver);
 
   Rx.Observable.fromEvent(document.querySelector('.map'), 'click')
   .filter(function(event) {
-    return event.target.classList.contains('highlight');
+    return event.target.classList.contains('inspect');
   })
   .tap(function(event) {
     var p = d3.select(event.target).datum();
-    var newId = p.id;
-    console.log('picking ', newId);
-    hex.winner.pickWinner(newId);
+    var index = p.id;
+    var xhr = d3.xhr('/api/sketch/' + p.id);
+    xhr.send('DELETE', function(err, res) {
+      console.log('removing ', index);
+      console.log(err || res);
+    });
+    // hex.ui.removeSketch(p);
   })
-  .subscribeOnError(hex.errorObserver);
+  .subscribeOnError(hex.ui.errorObserver);
 
   var dispose = function() {
     keyboardSubscription.dispose();

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "config-multipaas": "^0.1.0",
+    "http-proxy": "^1.11.1",
     "node-kubernetes-client": "^0.1.9",
     "qs": "^2.4.2",
     "request": "^2.55.0",
@@ -18,6 +19,7 @@
     "split": "^0.3.3",
     "stream-filter": "^1.0.0",
     "through2": "^0.6.5",
+    "underscore": "^1.8.3",
     "ws": "^0.7.1"
   },
   "devDependencies": {
@@ -29,12 +31,12 @@
     "url": "https://github.com/ryanj/commander-1k.git"
   },
   "scripts": {
-    "start": "node server/server.js",
+    "start": "node server.js",
     "create-pods": "cat app_template.json | sed -e \"s/REPLICA_COUNT/$REPLICA_COUNT/\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | sed -e \"s/APPNAME/$APPNAME/g\" | osc create -f -",
     "dont-create-pods": "cat app_template.json | sed -e \"s/REPLICA_COUNT/$REPLICA_COUNT/\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | sed -e \"s/APPNAME/$APPNAME/g\"",
     "dont-create-apps": "for x in $(seq 0 $INSTANCE_COUNT) ; do cat app_template.json | sed -e \"s/APPNAME/sketch-$x-pod/g\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" ; done",
     "create-apps": "for x in $(seq 0 $INSTANCE_COUNT) ; do cat app_template.json | sed -e \"s/APPNAME/doodle-$x-pod/g\" | sed -e \"s/APP_ROOT_URL/$APP_ROOT_URL/g\" | osc create --config='./client_config' -f - ; done"
   },
   "license": "CC0",
-  "main": "server/server.js"
+  "main": "server.js"
 }

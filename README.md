@@ -10,6 +10,10 @@ npm install
 Start a local server, passing in config via the environment:
 
 ```bash
+SERVER=openshift-master.summit.paas.ninja:8443 TOKEN=H8LgAhPKYVh-Iin_rrLBQV_q6IseHJ5IsjiUfJJJLME NAMESPACE=demo-live npm start
+```
+
+```bash
 ACCESS_TOKEN=12345678 OPENSHIFT_SERVER=openshift.servername.com npm start
 ```
 

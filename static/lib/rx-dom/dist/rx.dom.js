@@ -15,14 +15,14 @@
     freeModule = objectTypes[typeof module] && module && !module.nodeType && module,
     moduleExports = freeModule && freeModule.exports === freeExports && freeExports,
     freeGlobal = objectTypes[typeof global] && global;
-  
+
   if (freeGlobal && (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal)) {
     root = freeGlobal;
   }
 
   // Because of build optimizers
   if (typeof define === 'function' && define.amd) {
-    define(['./rx', 'exports'], function (Rx, exports) {
+    define(['rx', 'exports'], function (Rx, exports) {
       root.Rx = factory(root, exports, Rx);
       return root.Rx;
     });
@@ -32,7 +32,7 @@
     root.Rx = factory(root, {}, root.Rx);
   }
 }.call(this, function (root, exp, Rx, undefined) {
-    
+
   var Observable = Rx.Observable,
     observableProto = Observable.prototype,
     AnonymousObservable = Rx.AnonymousObservable,
@@ -131,12 +131,14 @@
     }
   }());
 
-  /** 
+  /**
    * Creates an observable sequence when the DOM is loaded
    * @returns {Observable} An observable sequence fired when the DOM is loaded
    */
   dom.ready = function () {
     return new AnonymousObservable(function (observer) {
+      var addedHandlers = false;
+
       function handler () {
         observer.onNext();
         observer.onCompleted();
@@ -145,15 +147,17 @@
       if (document.readyState === 'complete') {
         setTimeout(handler, 0);
       } else {
+        addedHandlers = true;
         document.addEventListener( 'DOMContentLoaded', handler, false );
         root.addEventListener( 'load', handler, false );
       }
 
       return function () {
+        if (!addedHandlers) { return; }
         document.removeEventListener( 'DOMContentLoaded', handler, false );
         root.removeEventListener( 'load', handler, false );
       };
-    }).publish().refCount();
+    });
   };
 
 
@@ -182,13 +186,35 @@
 
   // Get CORS support even for older IE
   function getCORSRequest() {
-    if ('withCredentials' in root.XMLHttpRequest.prototype) {
-      return new root.XMLHttpRequest();
+    var xhr = new root.XMLHttpRequest();
+    if ('withCredentials' in xhr) {
+      return xhr;
     } else if (!!root.XDomainRequest) {
       return new XDomainRequest();
     } else {
       throw new Error('CORS is not supported by your browser');
     }
+  }
+
+function normalizeAjaxLoadEvent(e, xhr, settings) {
+    var response = ('response' in xhr) ? xhr.response : xhr.responseText;
+    response = settings.responseType === 'json' ? JSON.parse(response) : response;
+    return {
+      response: response,
+      status: xhr.status,
+      responseType: xhr.responseType,
+      xhr: xhr,
+      originalEvent: e
+    };
+  }
+
+  function normalizeAjaxErrorEvent(e, xhr, type) {
+    return {
+      type: type,
+      status: xhr.status,
+      xhr: xhr,
+      originalEvent: e
+    };
   }
 
   /**
@@ -211,18 +237,36 @@
    *
    * @returns {Observable} An observable sequence containing the XMLHttpRequest.
   */
-  var ajaxRequest = dom.ajax = function (settings) {
-    typeof settings === 'string' && (settings = { method: 'GET', url: settings, async: true });
-    settings.method || (settings.method = 'GET');
-    settings.crossDomain === undefined && (settings.crossDomain = false);
-    settings.async === undefined && (settings.async = true);
+  var ajaxRequest = dom.ajax = function (options) {
+    var settings = {
+      method: 'GET',
+      crossDomain: false,
+      contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+      async: true,
+      headers: {},
+      responseType: 'text'
+    };
+
+    if(typeof options === 'string') {
+      settings.url = options;
+    } else {
+      for(var prop in options) {
+        if(hasOwnProperty.call(options, prop)) {
+          settings[prop] = options[prop];
+        }
+      }
+    }
+
+    if (!settings.crossDomain && !settings.headers['X-Requested-With']) {
+      settings.headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
+    settings.hasContent = settings.body !== undefined;
 
     return new AnonymousObservable(function (observer) {
       var isDone = false;
 
-      var xhr;
       try {
-        xhr = settings.crossDomain ? getCORSRequest() : getXMLHttpRequest();
+        var xhr = settings.crossDomain ? getCORSRequest() : getXMLHttpRequest();
       } catch (err) {
         observer.onError(err);
       }
@@ -234,47 +278,58 @@
           xhr.open(settings.method, settings.url, settings.async);
         }
 
-        if (settings.headers) {
-          var headers = settings.headers;
-          for (var header in headers) {
-            if (hasOwnProperty.call(headers, header)) {
-              xhr.setRequestHeader(header, headers[header]);
-            }
+        var headers = settings.headers;
+        for (var header in headers) {
+          if (hasOwnProperty.call(headers, header)) {
+            xhr.setRequestHeader(header, headers[header]);
           }
         }
 
-        xhr.onreadystatechange = xhr.onload = function () {
-          // Check if CORS
-          if (settings.crossDomain) {
-            observer.onNext(xhr);
+        if(!!xhr.upload || (!('withCredentials' in xhr) && !!root.XDomainRequest)) {
+          xhr.onload = function(e) {
+            if(settings.progressObserver) {
+              settings.progressObserver.onNext(e);
+              settings.progressObserver.onCompleted();
+            }
+            observer.onNext(normalizeAjaxLoadEvent(e, xhr, settings));
             observer.onCompleted();
             isDone = true;
-            return;
+          };
+
+          if(settings.progressObserver) {
+            xhr.onprogress = function(e) {
+              settings.progressObserver.onNext(e);
+            };
           }
 
-          if (xhr.readyState === 4) {
-            var status = xhr.status;
-            if ((status >= 200 && status <= 300) || status === 0 || status === '') {
-              observer.onNext(xhr);
-              observer.onCompleted();
-            } else {
-              observer.onError(xhr);
-            }
-
+          xhr.onerror = function(e) {
+            settings.progressObserver && settings.progressObserver.onError(e);
+            observer.onError(normalizeAjaxErrorEvent(e, xhr, 'error'));
             isDone = true;
-          }
-        };
+          };
 
-        xhr.onerror = function () {
-          observer.onError(xhr);
-        };
-        // body is expected as an object
-        if ( settings.body && typeof settings.body === 'object') {
-          // Add proper header so server can parse it
-          xhr.setRequestHeader("Content-Type","application/json");
-          settings.body = JSON.stringify(settings.body);
+          xhr.onabort = function(e) {
+            settings.progressObserver && settings.progressObserver.onError(e);
+            observer.onError(normalizeAjaxErrorEvent(e, xhr, 'abort'));
+            isDone = true;
+          };
+        } else {
+
+          xhr.onreadystatechange = function (e) {
+            if (xhr.readyState === 4) {
+              var status = xhr.status == 1223 ? 204 : xhr.status;
+              if ((status >= 200 && status <= 300) || status === 0 || status === '') {
+                observer.onNext(normalizeAjaxLoadEvent(e, xhr, settings));
+                observer.onCompleted();
+              } else {
+                observer.onError(normalizeAjaxErrorEvent(e, xhr, 'error'));
+              }
+              isDone = true;
+            }
+          };
         }
-        xhr.send(settings.body || null);
+
+        xhr.send(settings.hasContent && settings.body || null);
       } catch (e) {
         observer.onError(e);
       }
@@ -293,7 +348,7 @@
    * @returns {Observable} The observable sequence which contains the response from the Ajax POST.
    */
   dom.post = function (url, body) {
-    return ajaxRequest({ url: url, body: body, method: 'POST', async: true });
+    return ajaxRequest({ url: url, body: body, method: 'POST' });
   };
 
   /**
@@ -303,7 +358,7 @@
    * @returns {Observable} The observable sequence which contains the response from the Ajax GET.
    */
   var observableGet = dom.get = function (url) {
-    return ajaxRequest({ url: url, method: 'GET', async: true });
+    return ajaxRequest({ url: url });
   };
 
   /**
@@ -314,8 +369,8 @@
    */
   dom.getJSON = function (url) {
     if (!root.JSON && typeof root.JSON.parse !== 'function') { throw new TypeError('JSON is not supported in your runtime.'); }
-    return observableGet(url).map(function (xhr) {
-      return JSON.parse(xhr.responseText);
+    return ajaxRequest({url: url, responseType: 'json'}).map(function (x) {
+      return x.response;
     });
   };
 
@@ -331,11 +386,11 @@
   })();
 
   /**
-   * Creates a cold observable JSONP Request with the specified settings.
+   * Creates an observable JSONP Request with the specified settings.
    *
-   * @example 
-   *   source = Rx.DOM.jsonpRequest('http://www.bing.com/?q=foo&JSONPRequest=?');
-   *   source = Rx.DOM.jsonpRequest( url: 'http://bing.com/?q=foo', jsonp: 'JSONPRequest' });
+   * @example
+   *   source = Rx.DOM.jsonpRequest('http://www.bing.com/?q=foo&JSONPCallback=?');
+   *   source = Rx.DOM.jsonpRequest( url: 'http://bing.com/?q=foo', jsonp: 'JSONPCallback' });
    *
    * @param {Object} settings Can be one of the following:
    *
@@ -347,61 +402,80 @@
    *
    * @returns {Observable} A cold observable containing the results from the JSONP call.
    */
-  dom.jsonpRequest = (function () {
-    var uniqueId = 0;
-    var defaultCallback = function _defaultCallback(observer, data) {
-      observer.onNext(data);
-      observer.onCompleted();
-    };
+   dom.jsonpRequest = (function() {
+     var id = 0;
 
-    return function (settings) {
-      return new AnonymousObservable(function (observer) {
-        typeof settings === 'string' && (settings = { url: settings });
-        !settings.jsonp && (settings.jsonp = 'JSONPCallback');
+     return function(options) {
+       return new AnonymousObservable(function(observer) {
 
-        var head = document.getElementsByTagName('head')[0] || document.documentElement,
-          tag = document.createElement('script'),
-          handler = 'rxjscallback' + uniqueId++;
-          
-        var prevFn;
-        if (typeof settings.jsonpCallback === 'string') {
-          handler = settings.jsonpCallback;
-          prevFn = root[handler];
-        }
+         var callbackId = 'callback_' + (id++).toString(36);
 
-        settings.url = settings.url.replace('=' + settings.jsonp, '=' + handler);
+         var settings = {
+           jsonp: 'JSONPCallback',
+           async: true,
+           jsonpCallback: 'rxjsjsonpCallbacks' + callbackId
+         };
 
-        root[handler] = function(data) {
-          if (prevFn && typeof prevFn === 'function') {
-            prevFn(observer, data);
-          } else {
-            defaultCallback(observer, data);
-          }
-        };
+         if(typeof options === 'string') {
+           settings.url = options;
+         } else {
+           for(var prop in options) {
+             if(hasOwnProperty.call(options, prop)) {
+               settings[prop] = options[prop];
+             }
+           }
+         }
 
-        var cleanup = function _cleanup() {
-          tag.onload = tag.onreadystatechange = null;
-          head && tag.parentNode && destroy(tag);
-          tag = undefined;
-          root[handler] = prevFn;
-        };
+         var script = document.createElement('script');
+         script.type = 'text/javascript';
+         script.async = settings.async;
+         script.src = settings.url.replace(settings.jsonp, settings.jsonpCallback);
 
-        tag.src = settings.url;
-        tag.async = true;
-        tag.onload = tag.onreadystatechange = function (_, abort) {
-          if ( abort || !tag.readyState || /loaded|complete/.test(tag.readyState) ) {
-            cleanup();
-          }
-        };  
-        head.insertBefore(tag, head.firstChild);
+         root[settings.jsonpCallback] = function(data) {
+           root[settings.jsonpCallback].called = true;
+           root[settings.jsonpCallback].data = data;
+         };
 
-        return function () {
-          if (!tag) { return; }
-          cleanup();
-        };
-      });
-    };
-  })();
+         var handler = function(e) {
+           if(e.type === 'load' && !root[settings.jsonpCallback].called) {
+             e = { type: 'error' };
+           }
+           var status = e.type === 'error' ? 400 : 200;
+           var data = root[settings.jsonpCallback].data;
+
+           if(status === 200) {
+             observer.onNext({
+               status: status,
+               responseType: 'jsonp',
+               response: data,
+               originalEvent: e
+             });
+
+             observer.onCompleted();
+           }
+           else {
+             observer.onError({
+               type: 'error',
+               status: status,
+               originalEvent: e
+             });
+           }
+         };
+
+         script.onload = script.onreadystatechanged = script.onerror = handler;
+
+         var head = document.getElementsByTagName('head')[0] || document.documentElement;
+         head.insertBefore(script, head.firstChild);
+
+         return function() {
+           script.onload = script.onreadystatechanged = script.onerror = null;
+           destroy(script);
+           script = null;
+         };
+       });
+     }
+   }());
+
    /**
    * Creates a WebSocket Subject with a given URL, protocol and an optional observer for the open event.
    *
@@ -415,7 +489,7 @@
    * @returns {Subject} An observable sequence wrapping a WebSocket.
    */
   dom.fromWebSocket = function (url, protocol, openObserver, closingObserver) {
-    if (!root.WebSocket) { throw new TypeError('WebSocket not implemented in your runtime.'); }
+    if (!WebSocket) { throw new TypeError('WebSocket not implemented in your runtime.'); }
 
     var socket;
 
@@ -434,7 +508,7 @@
     };
 
     var observable = new AnonymousObservable(function (obs) {
-      socket = protocol ? new root.WebSocket(url, protocol) : new root.WebSocket(url);
+      socket = protocol ? new WebSocket(url, protocol) : new WebSocket(url);
 
       var openHandler = function(e) {
         openObserver.onNext(e);
@@ -445,7 +519,7 @@
       var errHandler = function(e) { obs.onError(e); };
       var closeHandler = function(e) {
         if(e.code !== 1000 || !e.wasClean) {
-          obs.onError(e);
+          return obs.onError(e);
         }
         obs.onCompleted();
       };
@@ -617,26 +691,16 @@
     }
 
     function scheduleRelative(state, dueTime, action) {
-      var scheduler = this,
-        dt = Scheduler.normalize(dueTime);
-
+      var scheduler = this, dt = Scheduler.normalize(dueTime);
       if (dt === 0) { return scheduler.scheduleWithState(state, action); }
-
-      var disposable = new SingleAssignmentDisposable(),
-          id;
-      var scheduleFunc = function () {
-        if (id) { cancelAnimFrame(id); }
-        if (dt - scheduler.now() <= 0) {
-          !disposable.isDisposed && (disposable.setDisposable(action(scheduler, state)));
-        } else {
-          id = requestAnimFrame(scheduleFunc);
+      var disposable = new SingleAssignmentDisposable();
+      var id = root.setTimeout(function () {
+        if (!disposable.isDisposed) {
+          disposable.setDisposable(action(scheduler, state));
         }
-      };
-
-      id = requestAnimFrame(scheduleFunc);
-
+      }, dt);
       return new CompositeDisposable(disposable, disposableCreate(function () {
-        cancelAnimFrame(id);
+        root.clearTimeout(id);
       }));
     }
 
@@ -648,43 +712,148 @@
 
   }());
 
-  var BrowserMutationObserver = root.MutationObserver || root.WebKitMutationObserver;
-  if (!!BrowserMutationObserver) {
-
   /**
    * Scheduler that uses a MutationObserver changes as the scheduling mechanism
    */
-  Scheduler.mutationObserver = (function () {
+  Scheduler.microtask = (function () {
 
-    var queue = [], queueId = 0;
+    var nextHandle = 1, tasksByHandle = {}, currentlyRunning = false, scheduleMethod;
 
-    var observer = new BrowserMutationObserver(function() {
-      var toProcess = queue.slice(0);
-      queue = [];
-
-      toProcess.forEach(function (func) {
-        func();
-      });
-    });
-
-    var element = document.createElement('div');
-    observer.observe(element, { attributes: true });
-
-    // Prevent leaks
-    root.addEventListener('unload', function () {
-      observer.disconnect();
-      observer = null;
-    }, false);
-
-    function scheduleMethod (action) {
-      var id = queueId++;
-      queue[id] = action;
-      element.setAttribute('drainQueue', 'drainQueue');
-      return id;
+    function clearMethod(handle) {
+      delete tasksByHandle[handle];
     }
 
-    function clearMethod (id) {
-      delete queue[id];
+    function runTask(handle) {
+      if (currentlyRunning) {
+        root.setTimeout(function () { runTask(handle) }, 0);
+      } else {
+        var task = tasksByHandle[handle];
+        if (task) {
+          currentlyRunning = true;
+          try {
+            task();
+          } catch (e) {
+            throw e;
+          } finally {
+            clearMethod(handle);
+            currentlyRunning = false;
+          }
+        }
+      }
+    }
+
+    function postMessageSupported () {
+      // Ensure not in a worker
+      if (!root.postMessage || root.importScripts) { return false; }
+      var isAsync = false, oldHandler = root.onmessage;
+      // Test for async
+      root.onmessage = function () { isAsync = true; };
+      root.postMessage('', '*');
+      root.onmessage = oldHandler;
+
+      return isAsync;
+    }
+
+    // Use in order, setImmediate, nextTick, postMessage, MessageChannel, script readystatechanged, setTimeout
+    var BrowserMutationObserver = root.MutationObserver || root.WebKitMutationObserver;
+    if (!!BrowserMutationObserver) {
+
+      var PREFIX = 'drainqueue_';
+
+      var observer = new BrowserMutationObserver(function(mutations) {
+        mutations.forEach(function (mutation) {
+          runTask(mutation.attributeName.substring(PREFIX.length));
+        })
+      });
+
+      var element = document.createElement('div');
+      observer.observe(element, { attributes: true });
+
+      // Prevent leaks
+      root.addEventListener('unload', function () {
+        observer.disconnect();
+        observer = null;
+      }, false);
+
+      scheduleMethod = function (action) {
+        var id = nextHandle++;
+        tasksByHandle[id] = action;
+        element.setAttribute(PREFIX + id, 'drainQueue');
+        return id;
+      };
+    } else if (typeof root.setImmediate === 'function') {
+      scheduleMethod = function (action) {
+        var id = nextHandle++;
+        tasksByHandle[id] = action;
+        root.setImmediate(function () {
+          runTask(id);
+        });
+
+        return id;
+      };
+    } else if (postMessageSupported()) {
+      var MSG_PREFIX = 'ms.rx.schedule' + Math.random();
+
+      function onGlobalPostMessage(event) {
+        // Only if we're a match to avoid any other global events
+        if (typeof event.data === 'string' && event.data.substring(0, MSG_PREFIX.length) === MSG_PREFIX) {
+          runTask(event.data.substring(MSG_PREFIX.length));
+        }
+      }
+
+      if (root.addEventListener) {
+        root.addEventListener('message', onGlobalPostMessage, false);
+      } else if (root.attachEvent){
+        root.attachEvent('onmessage', onGlobalPostMessage);
+      }
+
+      scheduleMethod = function (action) {
+        var id = nextHandle++;
+        tasksByHandle[currentId] = action;
+        root.postMessage(MSG_PREFIX + currentId, '*');
+        return id;
+      };
+    } else if (!!root.MessageChannel) {
+      var channel = new root.MessageChannel();
+
+      channel.port1.onmessage = function (event) {
+        runTask(event.data);
+      };
+
+      scheduleMethod = function (action) {
+        var id = nextHandle++;
+        tasksByHandle[id] = action;
+        channel.port2.postMessage(id);
+        return id;
+      };
+    } else if ('document' in root && 'onreadystatechange' in root.document.createElement('script')) {
+
+      scheduleMethod = function (action) {
+        var scriptElement = root.document.createElement('script');
+        var id = nextHandle++;
+        tasksByHandle[id] = action;
+
+        scriptElement.onreadystatechange = function () {
+          runTask(id);
+          scriptElement.onreadystatechange = null;
+          scriptElement.parentNode.removeChild(scriptElement);
+          scriptElement = null;
+        };
+        root.document.documentElement.appendChild(scriptElement);
+
+        return id;
+      };
+
+    } else {
+      scheduleMethod = function (action) {
+        var id = nextHandle++;
+        tasksByHandle[id] = action;
+        root.setTimeout(function () {
+          runTask(id);
+        }, 0);
+
+        return id;
+      };
     }
 
     function scheduleNow(state, action) {
@@ -702,29 +871,16 @@
     }
 
     function scheduleRelative(state, dueTime, action) {
-
-      var scheduler = this,
-        dt = Scheduler.normalize(dueTime);
-
-      if (dt === 0) {
-        return scheduler.scheduleWithState(state, action);
-      }
-
-      var disposable = new SingleAssignmentDisposable(), id;
-
-      function scheduleFunc() {
-        if (id) { clearMethod(id); }
-        if (dt - scheduler.now() <= 0) {
-          !disposable.isDisposed && (disposable.setDisposable(action(scheduler, state)));
-        } else {
-          id = scheduleMethod(scheduleFunc);
+      var scheduler = this, dt = Scheduler.normalize(dueTime);
+      if (dt === 0) { return scheduler.scheduleWithState(state, action); }
+      var disposable = new SingleAssignmentDisposable();
+      var id = root.setTimeout(function () {
+        if (!disposable.isDisposed) {
+          disposable.setDisposable(action(scheduler, state));
         }
-      };
-
-      id = scheduleMethod(scheduleFunc);
-
+      }, dt);
       return new CompositeDisposable(disposable, disposableCreate(function () {
-        clearMethod(id);
+        root.clearTimeout(id);
       }));
     }
 
@@ -734,7 +890,6 @@
 
     return new Scheduler(defaultNow, scheduleNow, scheduleRelative, scheduleAbsolute);
   }());
-}
 
   Rx.DOM.geolocation = {
     /**

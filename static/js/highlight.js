@@ -15,15 +15,14 @@ hex.highlight = (function dataSimulator(d3, Rx) {
     }
     var perspective = 1.5
       , duration = 200
-      , scale = 0.2
-      , zoom = 0.5;
+      , zoom = 2.5;
 
-    var p = hex.points[index];
-    highlightedHexagon = hex.svg.insert('path');
+    var p = hex.ui.points[index];
+    highlightedHexagon = hex.ui.svg.insert('path');
     highlightedHexagon
       .attr('class', 'hexagon highlight')
-      .attr('d', 'm' + hex.hexagon(hex.honeycomb.size/scale).join('l') + 'z')
-      .attr('transform', 'matrix('+scale+', 0, 0, '+scale+', '+ p.x +', '+ p.y +')')
+      .attr('d', 'm' + hex.ui.hexagon(hex.ui.honeycomb.size).join('l') + 'z')
+      .attr('transform', 'translate(' + p.x + ',' + p.y + ')')
       .attr('fill', 'url(#img' + p.id + ')')
       .style('fill-opacity', 1.0)
       .datum(p)
@@ -45,7 +44,7 @@ hex.highlight = (function dataSimulator(d3, Rx) {
     .transition()
     .duration(duration)
     .ease('quad-out')
-    .attr('transform', 'matrix('+scale+', 0, 0, '+scale+', '+ p.x +', '+ p.y +')')
+    .attr('transform', 'translate(' + p.x + ',' + p.y + ')')
     .remove();
   }
 
@@ -63,11 +62,11 @@ hex.highlight = (function dataSimulator(d3, Rx) {
   }
 
   var getCandidates = function(currentPoint) {
-    return hex.points.filter(function(point) {
+    return hex.ui.points.filter(function(point) {
       if (currentPoint && currentPoint.id === point.id) {
         return true;
       }
-      if (point.doodle) {
+      if (point.sketch) {
         return ! hex.winner.isAlreadyWinner(point);
       } else {
         return false;

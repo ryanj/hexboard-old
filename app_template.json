@@ -63,7 +63,7 @@
                                 "containers": [
                                     {
                                         "name": "APPNAME",
-                                        "image": "ryanj/doodlepod",
+                                        "image": "ryanj/sketchpod",
                                         "ports": [
                                             {
                                                 "name": "APPNAME-tcp-8080",

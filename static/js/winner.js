@@ -6,7 +6,7 @@ hex.winner = (function dataSimulator(d3, Rx) {
   Rx.Observable.fromEvent(d3.select('#winners').node(), 'click').tap(function() {
     pickWinners();
     stageWinners();
-  }).subscribeOnError(hex.errorObserver);
+  }).subscribeOnError(hex.ui.errorObserver);
 
   // Returns a random integer between min included) and max (excluded)
   var getRandomInt = function (min, max) {
@@ -17,7 +17,7 @@ hex.winner = (function dataSimulator(d3, Rx) {
 
   var isAlreadyWinner = function(point) {
     return winners.some(function(winner) {
-      return 'cuid' in winner.doodle && winner.doodle.cuid === point.doodle.cuid;
+      return 'cuid' in winner.sketch && winner.sketch.cuid === point.sketch.cuid;
     });
   };
 
@@ -37,18 +37,24 @@ hex.winner = (function dataSimulator(d3, Rx) {
       return;
     }
     console.log('picking winner', index);
-    var winner = hex.points[index];
+    var winner = hex.ui.points[index];
+    if (!winner.sketch) {
+      return;
+    };
     winners.push(winner);
     stageWinner(winner, winners.length - 1);
   };
 
   var pickWinners = function() {
     var numWinners = 10;
-    var candidates = hex.points.filter(function(point) {
-      return point.doodle;
+    var candidates = hex.ui.points.filter(function(point) {
+      return point.sketch;
     });
 
     d3.range(numWinners - winners.length).map(function(currentValue, index) {
+      if (candidates.length === 0) {
+        return;
+      };
       var index = getRandomInt(0, candidates.length);
       winners.push(candidates[index]);
       candidates = candidates.filter(function(point) {
@@ -59,14 +65,14 @@ hex.winner = (function dataSimulator(d3, Rx) {
 
   var stageSpots = d3.range(10).map(function(spot, index) {
     return {
-      x: (Math.floor(index / 5) * 2 - 1) * (hex.honeycomb.dimensions.x / 2 + 50) + hex.content.x/2
-    , y: hex.content.y / 2 + 10 * hex.honeycomb.spacing.y / 2 * (index % 5 - 2)
+      x: (Math.floor(index / 5) * 2 - 1) * (hex.ui.honeycomb.dimensions.x / 2 + 50) + hex.ui.content.x/2
+    , y: hex.ui.content.y / 2 + 10 * hex.ui.honeycomb.spacing.y / 2 * (index % 5 - 2)
     }
   });
 
   var winnerSpots = d3.range(10).map(function(spot, index) {
-    var c = {x: hex.content.x / 2, y: hex.content.y / 2}
-      , delta = {x: hex.honeycomb.dimensions.x/4, y: hex.honeycomb.dimensions.y/3}
+    var c = {x: hex.ui.content.x / 2, y: hex.ui.content.y / 2}
+      , delta = {x: hex.ui.honeycomb.dimensions.x/4, y: hex.ui.honeycomb.dimensions.y/3}
       , offset = {x: 0, y: - 0.17}  // an adjustment to make room for the names
 
     if (index <= 2) {
@@ -104,9 +110,9 @@ hex.winner = (function dataSimulator(d3, Rx) {
   }
 
   var stageWinner = function(p, index) {
-    animateWinner(p, p, stageSpots[index], 0.5, 1, false, function() {
+    animateWinner(p, p, stageSpots[index], 1, 2.5, false, function() {
       if (winners.length === 10 && index === 9) {
-        hex.dispose();
+        hex.ui.dispose();
         hex.controls.dispose();
         hex.highlight.unhighlight();
         displayWinners();
@@ -115,54 +121,53 @@ hex.winner = (function dataSimulator(d3, Rx) {
   }
 
   var displayWinner = function(p, index) {
-    animateWinner(p, stageSpots[index], winnerSpots[index], 0.4, 1.3, true);
-    console.log('Winner name:', p.doodle.name, 'cuid:', p.doodle.cuid, 'submission:', p.doodle.submissionId);
+    animateWinner(p, stageSpots[index], winnerSpots[index], 1, 3.5, true);
+    console.log('Winner name:', p.sketch.name, 'cuid:', p.sketch.cuid, 'submission:', p.sketch.submissionId);
   }
 
   var animateWinner = function(p, p0, p1, zoom1, zoom2, shownames, cb) {
     var duration = 1000
-      , scale = 0.2;
       ;
-    var spaceIndex = p.doodle.name.indexOf(' ');
-    p.doodle.firstname = p.doodle.name.substring(0,spaceIndex);
-    p.doodle.lastname = p.doodle.name.substring(spaceIndex+1);
+    var spaceIndex = p.sketch.name.indexOf(' ');
+    p.sketch.firstname = p.sketch.name.substring(0,spaceIndex);
+    p.sketch.lastname = p.sketch.name.substring(spaceIndex+1);
 
     if (!p.group) {
-      p.group = hex.svg.insert('g')
+      p.group = hex.ui.svg.insert('g')
         .attr('class', 'winner')
         .attr('transform', function(d) { return 'translate(' + p0.x + ',' + p0.y + ')'; });
 
       p.group.insert('path')
         .attr('class', 'hexagon')
-        .attr('d', 'm' + hex.hexagon(hex.honeycomb.size/scale).join('l') + 'z')
+        .attr('d', 'm' + hex.ui.hexagon(hex.ui.honeycomb.size).join('l') + 'z')
         .attr('fill', 'url(#img' + p.id + ')')
         .attr('transform', 'matrix('+zoom1+', 0, 0, '+zoom1+', 0, 0)');
     }
 
     if (shownames) {
-      var textWidth = hex.honeycomb.size * 3.5
-        , textHeight = hex.honeycomb.size * 1.3;
+      var textWidth = hex.ui.honeycomb.size * 3.5
+        , textHeight = hex.ui.honeycomb.size * 1.3;
       var textGroup = p.group.insert('g')
         .attr('class', 'text')
-        .attr('transform', 'matrix('+1/zoom1+', 0, 0, '+1/zoom1+', 0, '+ hex.honeycomb.size/zoom1 * 1.5 +')')
+        .attr('transform', 'matrix('+1/zoom1+', 0, 0, '+1/zoom1+', 0, '+ hex.ui.honeycomb.size/zoom1 * 1.5 +')')
       textGroup.insert('rect')
         .attr('width', textWidth)
         .attr('height', textHeight)
         .attr('x', -textWidth / 2)
-        .attr('y', -hex.honeycomb.size / 2.2)
+        .attr('y', -hex.ui.honeycomb.size / 2.2)
         .attr('rx', 3)
         .attr('ry', 3);
 
       textGroup.insert('text')
         .attr('class', 'firstname')
         .attr('text-anchor', 'middle')
-        .text(p.doodle.firstname);
+        .text(p.sketch.firstname);
 
       textGroup.insert('text')
         .attr('class', 'lastname')
         .attr('text-anchor', 'middle')
-        .attr('y', hex.honeycomb.size / 1.5)
-        .text(p.doodle.lastname);
+        .attr('y', hex.ui.honeycomb.size / 1.5)
+        .text(p.sketch.lastname);
     }
 
     p.group.transition()
