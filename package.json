@@ -1,6 +1,6 @@
 {
-  "name": "commander-1k",
-  "description": "command, control, and data viz for 1k containers",
+  "name": "hexboard",
+  "description": "container-based game tiles",
   "version": "0.1.0",
   "private": false,
   "engines": {

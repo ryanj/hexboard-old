@@ -13,19 +13,12 @@ var Rx = require('rx')
 var tag = 'POD';
 
 // Config
-var config = {
-  live: {
-    oauthToken: process.env.ACCESS_TOKEN_LIVE || false,
-    namespace: process.env.NAMESPACE_LIVE || 'demo1', //summit1
-    openshiftServer: process.env.OPENSHIFT_SERVER || 'openshift-master.summit2.paas.ninja:8443'
-  },
-  preStart: {
-    oauthToken: process.env.ACCESS_TOKEN_PRESTART || false,
-    namespace: process.env.NAMESPACE_PRESTART || 'demo-test',  //summit2
-    openshiftServer: process.env.OPENSHIFT_SERVER || 'openshift-master.summit2.paas.ninja:8443',
-    proxy: 'http://openshiftproxy-bleathemredhat.rhcloud.com'
-  }
-};
+var config = cc().add({
+  oauth_token: process.env.ACCESS_TOKEN || false,
+  namespace: process.env.NAMESPACE || 'demo',
+  openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja:8443',
+  openshift_app_basename: process.env.OPENSHIFT_APP_BASENAME || 'apps.summit.paas.ninja:8443'
+});
 
 // Allow self-signed SSL
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -49,30 +42,19 @@ var options = {
   }
 };
 
-options.watchLivePods = _.extend({
-  url: buildWatchPodsUrl(config.live.openshiftServer, config.live.namespace)
-, auth: {bearer: config.live.oauthToken }
+options.watchPods = _.extend({
+  url: buildWatchPodsUrl(config.get('openshift_server'), config.get('namespace'))
+, auth: {bearer: config.get('oauth_token') }
 }
 , options.base
 );
 
-options.watchPreStartPods = _.extend({
-  url: buildWatchPodsUrl(config.preStart.openshiftServer, config.preStart.namespace)
-, auth: {bearer: config.preStart.oauthToken
+options.listPods = _.extend({
+  url: buildListPodsUrl(config.get('openshift_server'), config.get('namespace'))
+, auth: {bearer: config.get('oauth_token')
 }}
 , options.base
 );
-
-options.listPreStartPods = _.extend({
-  url: buildListPodsUrl(config.preStart.openshiftServer, config.preStart.namespace)
-, auth: {bearer: config.preStart.oauthToken
-}}
-, options.base
-);
-
-function podIdToURL(id) {
-  return "sketch-"+id+"-app-summit3.apps.summit.paas.ninja"
-};
 
 var idMapNamespaces = {};
 var lastId = {};
@@ -253,32 +235,20 @@ var watchStream = function(connection, options) {
   .replay();
 };
 
-var liveWatchConnection = connect(options.watchLivePods);
-var preStartWatchConnection = connect(options.watchPreStartPods);
+var watchConnection = connect(options.watchPods);
+var apiWatchStream = watchStream(watchConnection, options.watchPods);
+apiWatchStream.connect();
 
-var liveWatchStream = watchStream(liveWatchConnection, options.watchLivePods);
-var preStartWatchStream = watchStream(preStartWatchConnection, options.watchPreStartPods);
-
-liveWatchStream.connect();
-preStartWatchStream.connect();
-
-var parsedLiveStream = liveWatchStream.map(function(json) {
+var parsedStream = apiWatchStream.map(function(json) {
   return parseData(json);
 })
 .filter(function(parsed) {
   return parsed && parsed.data && parsed.data.stage && parsed.data.id <= 1025;
 });
 
-var parsedPreStartStream = preStartWatchStream.map(function(json) {
-  return parseData(json);
-})
-.filter(function(parsed) {
-  return parsed && parsed.data && parsed.data.stage && parsed.data.id <= 1025;
-});
-
-var getActivePreStartPods = Rx.Observable.create(function(observer) {
-  console.log(tag, 'options', options.listPreStartPods);
-  request(options.listPreStartPods, function(error, response, body) {
+var getActivePods = Rx.Observable.create(function(observer) {
+  console.log(tag, 'options', options.listPods);
+  request(options.listPods, function(error, response, body) {
     if (error) {
       observer.onError({
         msg: error
@@ -334,28 +304,23 @@ var getActivePreStartPods = Rx.Observable.create(function(observer) {
   var pod = {
     index: index
   , name: object.metadata.name
-  , url: config.preStart.proxy + '/' + config.preStart.namespace + '/' + object.metadata.name
+  , url: '/' + config.get('namespace') + '/' + object.metadata.name
   }
   return pod;
 })
 .flatMap(function(pod) {
   return verifyPodAvailable(pod);
 })
-// .tap(function(pod) {
-//   console.log('Available:', pod.url);
-// })
 .replay();
 
-getActivePreStartPods.connect();
-
-// getActivePreStartPods.take(1).subscribeOnError(function(err) {console.log(tag, err)});
+getActivePods.connect();
 
 var getRandomInt = function (min, max) {
   return Math.floor(Math.random() * (max - min) + min);
 };
 
 var ids = _.range(0, 1025);
-var getRandomPod = getActivePreStartPods.filter(function(pod) {
+var getRandomPod = getActivePods.filter(function(pod) {
     return ! pod.id;
   })
   .take(1)
@@ -368,10 +333,8 @@ var getRandomPod = getActivePreStartPods.filter(function(pod) {
   });
 
 module.exports = {
-  rawLiveStream: liveWatchStream
-, rawPreStartStream: preStartWatchStream
-, liveStream: parsedLiveStream
-, preStartStream: parsedPreStartStream
+  rawStream: watchStream
+, stream: parsedStream
 , parseData : parseData
 , getRandomPod: getRandomPod
 };
