@@ -18,8 +18,9 @@ var config = cc().add({
   oauth_token: process.env.ACCESS_TOKEN || false,
   namespace: process.env.NAMESPACE || 'demo',
   openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja:8443',
-  openshift_app_basename: process.env.OPENSHIFT_APP_BASENAME || 'apps.summit.paas.ninja:8443'
+  openshift_app_basename: process.env.OPENSHIFT_APP_BASENAME || 'apps.summit.paas.ninja'
 });
+cc.add({'hostname': config.get('app_name')+'.'+config.get('namespace')+'.'+config.get('openshift_app_basename')})
 
 // Allow self-signed SSL
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -133,7 +134,7 @@ var parseData = function(update) {
     update.data = {
       id: podNumber(update.object.metadata.namespace, replicaName),
       name: podName,
-      hostname: podName + '-summit3.apps.summit.paas.ninja',
+      hostname: config.get('hostname') + '/'+ config.get('namespace')+'/'+ replicaName, 
       stage: update.type,
       type: 'event',
       timestamp: update.timestamp,
