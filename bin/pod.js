@@ -20,7 +20,7 @@ var config = cc().add({
   openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja:8443',
   openshift_app_basename: process.env.OPENSHIFT_APP_BASENAME || 'apps.summit.paas.ninja'
 });
-cc.add({'hostname': config.get('app_name')+'.'+config.get('namespace')+'.'+config.get('openshift_app_basename')})
+config.add({'hostname': config.get('app_name')+'.'+config.get('namespace')+'.'+config.get('openshift_app_basename')})
 
 // Allow self-signed SSL
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
