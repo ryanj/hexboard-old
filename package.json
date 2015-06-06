@@ -15,6 +15,7 @@
     "request": "^2.55.0",
     "restify": "^3.0.2",
     "rx": "^2.5.2",
+    "rx-node": "^1.0.0",
     "sort-stream2": "^1.0.0",
     "split": "^0.3.3",
     "stream-filter": "^1.0.0",
@@ -23,7 +24,6 @@
     "ws": "^0.7.1"
   },
   "devDependencies": {
-    "rx-node": "^1.0.0",
     "tap": "^0.4.13"
   },
   "repository": {
