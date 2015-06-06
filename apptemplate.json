@@ -5,19 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "APPNAME-pods",
+            "id": "APPNAMEpod",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "APPNAME-pods-tcp-8080",
+            "portName": "APPNAMEpod-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "APPNAME-pods"
+                "deploymentconfig": "APPNAMEpod"
             },
             "ports": [
                 {
-                    "name": "APPNAME-pods-tcp-8080",
+                    "name": "APPNAMEpod-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -121,7 +121,7 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "APPNAME-pods",
+                "name": "APPNAMEpod",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -136,7 +136,7 @@
                 "controllerTemplate": {
                     "replicas": REPLICA_COUNT,
                     "replicaSelector": {
-                        "deploymentconfig": "APPNAME-pods"
+                        "deploymentconfig": "APPNAMEpod"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -146,11 +146,11 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "APPNAME-pods",
+                                        "name": "APPNAMEpod",
                                         "image": "ryanj/sketchpod",
                                         "ports": [
                                             {
-                                                "name": "APPNAME-pods-tcp-8080",
+                                                "name": "APPNAMEpod-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -164,7 +164,7 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "APPNAME-pods"
+                            "deploymentconfig": "APPNAMEpod"
                         }
                     }
                 }

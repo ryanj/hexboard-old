@@ -14,6 +14,7 @@ var tag = 'POD';
 
 // Config
 var config = cc().add({
+  app_name : process.env.APPNAME || 'sketch',
   oauth_token: process.env.ACCESS_TOKEN || false,
   namespace: process.env.NAMESPACE || 'demo',
   openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja:8443',
@@ -123,7 +124,7 @@ var parseData = function(update) {
     return update;
   };
   var podName = update.object.spec.containers[0].name;
-  if (podName.indexOf('sketch') !== 0 || !update.object.status || !update.object.status.phase) {
+  if (podName.indexOf(config.get('app_name')+'pod') !== 0 || !update.object.status || !update.object.status.phase) {
     // console.log(tag, 'Ignoring update for container name:', update.object.spec.containers[0].name);
   } else {
     var replicaName = update.object.metadata.name;
