@@ -5,19 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "APPNAMEpod",
+            "id": "${APPNAME}pod",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "APPNAMEpod-tcp-8080",
+            "portName": "${APPNAME}pod-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "APPNAMEpod"
+                "deploymentconfig": "${APPNAME}pod"
             },
             "ports": [
                 {
-                    "name": "APPNAMEpod-tcp-8080",
+                    "name": "${APPNAME}pod-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -26,19 +26,19 @@
         },
         {
             "kind": "Service",
-            "id": "APPNAMEproxy",
+            "id": "${APPNAME}proxy",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "APPNAMEproxy-tcp-8080",
+            "portName": "${APPNAME}proxy-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "APPNAMEproxy"
+                "deploymentconfig": "${APPNAME}proxy"
             },
             "ports": [
                 {
-                    "name": "APPNAMEproxy-tcp-8080",
+                    "name": "${APPNAME}proxy-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -49,16 +49,16 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "APPNAMEproxy"
+                "name": "${APPNAME}proxy"
             },
-            "host": "APPNAME.APP_ROOT_URL",
-            "serviceName": "APPNAMEproxy"
+            "host": "${APPNAME}.${APP_ROOT_URL}",
+            "serviceName": "${APPNAME}proxy"
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "APPNAMEproxy",
+                "name": "${APPNAME}proxy",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -73,7 +73,7 @@
                 "controllerTemplate": {
                     "replicas": 1,
                     "replicaSelector": {
-                        "deploymentconfig": "APPNAMEproxy"
+                        "deploymentconfig": "${APPNAME}proxy"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -83,21 +83,37 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "APPNAMEproxy",
-                                        "image": "ryanj/openshift-proxy",
+                                        "name": "${APPNAME}proxy",
+                                        "image": "ryanj/openshift-proxy:latest",
                                         "env": [
                                             {
+                                                "name": "APPNAME",
+                                                "value": "${APPNAME}"
+                                            },
+                                            {
+                                                "name": "NAMESPACE",
+                                                "value": "${NAMESPACE}"
+                                            },
+                                            {
+                                                "name": "APP_ROOT_URL",
+                                                "value": "${APP_ROOT_URL}"
+                                            },
+                                            {
+                                                "name": "PROXY",
+                                                "value": "${PROXY}"
+                                            },
+                                            {
                                                 "name": "OPENSHIFT_SERVER",
-                                                "value": "OPENSHIFT_MASTER"
+                                                "value": "${OPENSHIFT_SERVER}"
                                             },
                                             {
                                                 "name": "ACCESS_TOKEN",
-                                                "value": "OPENSHIFT_ACCESS_TOKEN"
+                                                "value": "${ACCESS_TOKEN}"
                                             }
                                         ],
                                         "ports": [
                                             {
-                                                "name": "APPNAMEproxy-tcp-8080",
+                                                "name": "${APPNAME}proxy-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -111,7 +127,7 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "APPNAMEproxy"
+                            "deploymentconfig": "${APPNAME}proxy"
                         }
                     }
                 }
@@ -121,7 +137,7 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "APPNAMEpod",
+                "name": "${APPNAME}pod",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -134,9 +150,9 @@
                     "type": "Recreate"
                 },
                 "controllerTemplate": {
-                    "replicas": REPLICA_COUNT,
+                    "replicas": ${REPLICA_COUNT},
                     "replicaSelector": {
-                        "deploymentconfig": "APPNAMEpod"
+                        "deploymentconfig": "${APPNAME}pod"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -146,11 +162,11 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "APPNAMEpod",
-                                        "image": "ryanj/sketchpod",
+                                        "name": "${APPNAME}pod",
+                                        "image": "ryanj/sketchpod:latest",
                                         "ports": [
                                             {
-                                                "name": "APPNAMEpod-tcp-8080",
+                                                "name": "${APPNAME}pod-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -164,7 +180,7 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "APPNAMEpod"
+                            "deploymentconfig": "${APPNAME}pod"
                         }
                     }
                 }

@@ -5,7 +5,7 @@ var autoconfig = function (config_overrides){
   , oauth_token: process.env.ACCESS_TOKEN || false
   , namespace  : process.env.NAMESPACE || 'demo'
   , openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja:8443'
-  , openshift_app_basename: process.env.OPENSHIFT_APP_BASENAME || 'apps.summit.paas.ninja:8443'
+  , openshift_app_basename: process.env.APP_ROOT_URL || 'apps.summit.paas.ninja:8443'
   })
   config.add({
     proxy      : process.env.PROXY || config.get('HOSTNAME')
