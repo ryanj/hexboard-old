@@ -1,8 +1,7 @@
 'use strict';
 
 var Rx = require('rx')
-  , cc           = require('config-multipaas')
-  , fs       = require('fs')
+  , config  = require('./config')
   , request = require('request')
   ;
 
@@ -43,8 +42,8 @@ var randomSketches = function(numSketches) {
           var containerId = getRandomInt(0, 1026);
           var sketch = {
             containerId: containerId
-          , url: '/thousand/sketches/thousand-sketch' + imageIndex + '.png'
-          , uiUrl: '/thousand/sketches/thousand-sketch' + imageIndex + '.png'
+          , url: '/sketches/thousand-sketch' + imageIndex + '.png'
+          , uiUrl: '/sketches/thousand-sketch' + imageIndex + '.png'
           , name: 'FirstName' + containerId + ' LastName' + containerId
           , cuid: imageIndex
           , submissionId: submissionCount++
@@ -56,8 +55,7 @@ var randomSketches = function(numSketches) {
   return sketches;
 }
 
-
 module.exports = {
   events : randomEvents
-, randomSketches: randomSketches
+, rSketches: randomSketches
 };

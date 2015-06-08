@@ -4,7 +4,7 @@ var fs = require('fs')
   , os = require('os')
   , Rx = require('rx')
   , RxNode = require('rx-node')
-  , randomSketches = require('./random').randomSketches
+  , rSketches = require('./random').rSketches
   , thousandEmitter = require('./thousandEmitter')
   , request = require('request')
   , pod = require('./pod')
@@ -48,7 +48,7 @@ module.exports = exports = {
   receiveImage: function(req, res, next) {
     console.log(tag, 'originalUrl', req.originalUrl);
     pod.getRandomPod.flatMap(function(randomPod) {
-      // console.log(randomPod);
+      // console.log(tag, 'randomPod', randomPod);
       var sketch = {
         containerId: randomPod.id
       , url: randomPod.url
@@ -57,7 +57,7 @@ module.exports = exports = {
       , cuid: req.query.cuid
       , submissionId: req.query.submission_id
       };
-      randomPod.skecth = sketch;
+      randomPod.sketch = sketch;
       return Rx.Observable.zip(
         saveImageToFile(sketch, req)
       , postImageToPod(sketch, req)
@@ -71,6 +71,7 @@ module.exports = exports = {
       res.json(sketch);
     }, function(err) {
       // delete randomPod.skecth;
+      // delete randomPod.claimed;
       console.log(tag, err)
       next(err);
     });
@@ -100,7 +101,8 @@ module.exports = exports = {
 
   randomSketches: function(req, res, next) {
     var numSketches = req.params.numSketches;
-    randomSketches(numSketches).flatMap(function(sketch) {
+    rSketches(numSketches).flatMap(function(sketch) {
+      console.log(sketch);
       return pod.getRandomPod.map(function(randomPod) {
         sketch.containerId = randomPod.id
         thousandEmitter.emit('new-sketch', sketch);
@@ -112,7 +114,7 @@ module.exports = exports = {
       next(error)
     }, function() {
       console.log(tag, numSketches + ' sketches pushed');
-      res.json({msg: numSketches + ' sketches pushed'});
     });
+    res.json({msg: numSketches + ' sketches pushed'});
   }
 };

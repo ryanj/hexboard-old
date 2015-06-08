@@ -27,14 +27,14 @@ var eventReplay = function() {
       callback()
     }))
     .pipe(filter(function(parsed) {
-      return parsed && parsed.data && parsed.data.stage;
+      return parsed && parsed.data && parsed.data.type;
     }));
 
   var logEvents = RxNode.fromStream(fileStream).share();
 
   var startTime = null;
   var previousInterval = null;
-  var interval = 1000; //ms
+  var interval = 500; //ms
 
   // An observable triggerred by <interval> changes in logEvents
   var replayProgress = logEvents.flatMap(function(event) {
@@ -58,7 +58,7 @@ var eventReplay = function() {
   // Zip the buffered events to an interval for real-time playback
   var replay = Rx.Observable.zip(
     bufferedEvents
-  , Rx.Observable.interval(interval) // ms
+  , Rx.Observable.interval(interval / 50) // ms
   , function(podEvents, index) { return podEvents}
   )
   .flatMap(function(podEvents) {

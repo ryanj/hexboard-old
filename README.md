@@ -10,18 +10,14 @@ npm install
 Start a local server, passing in config via the environment:
 
 ```bash
-SERVER=openshift-master.summit.paas.ninja:8443 TOKEN=H8LgAhPKYVh-Iin_rrLBQV_q6IseHJ5IsjiUfJJJLME NAMESPACE=demo-live npm start
-```
-
-```bash
-ACCESS_TOKEN=12345678 OPENSHIFT_SERVER=openshift.servername.com npm start
+OPENSHIFT_SERVER=openshift-master.summit.paas.ninja:8443 ACCESS_TOKEN=H8LgAhPKYVh-Iin_rrLBQV_q6IseHJ5IsjiUfJJJLME NAMESPACE=demo npm start
 ```
 
 Create 1000 sketchpods:
 
 ```bash
 export REPLICA_COUNT=1024 
-export APPNAME=sketchpod 
+export APPNAME=sketch
 export APP_ROOT_URL='PROJECTNAME.apps.YOUR_HOSTNAME'
 cat app_template.json | sed -e "s/REPLICA_COUNT/$REPLICA_COUNT/" | sed -e "s/APP_ROOT_URL/$APP_ROOT_URL/g" | sed -e "s/APPNAME/$APPNAME/g" | osc create -f -
 ```
@@ -37,7 +33,13 @@ To run [the related docker image](https://registry.hub.docker.com/u/ryanj/hexboa
 
 ```bash
 docker pull ryanj/hexboard
-docker run -d -p 8080:8080 -e "HOSTNAME=localhost" -e "ACCESS_TOKEN=00789101112" -e "OPENSHIFT_SERVER=openshift.servername.com" ryanj/hexboard
+export OPENSHIFT_SERVER=your.openshift.server.com
+export ACCESS_TOKEN='asdasdasdaasasddasd'
+export OPENSHIFT_APP_BASENAME='apps.summit.paas.ninja'
+export APPNAME=sketch
+export NAMESPACE=demo
+export APP_HOSTNAME='sketch.demo.apps.summit.paas.ninja'
+docker run -e "OPENSHIFT_SERVER=$OPENSHIFT_SERVER" -e "ACCESS_TOKEN=$ACCESS_TOKEN" -e "OPENSHIFT_APP_BASENAME=$APP_ROOT_URL" -e "APPNAME=$APPNAME" -e "NAMESPACE=$NAMESPACE" -e "HOSTNAME=$APP_HOSTNAME" -d -p 8080:8080 ryanj/hexboard 
 ```
 
 ## OpenShiftV3
@@ -49,11 +51,6 @@ Then, start a build from the CLI:
 
 ```bash
 osc start-build hexboard
-```
-
-And, add public routes:
-```bash
-osc create -f routes.json
 ```
 
 ## License

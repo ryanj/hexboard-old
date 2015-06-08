@@ -26,19 +26,19 @@
         },
         {
             "kind": "Service",
-            "id": "APPNAME",
+            "id": "APPNAMEproxy",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "APPNAME-tcp-8080",
+            "portName": "APPNAMEproxy-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "APPNAME"
+                "deploymentconfig": "APPNAMEproxy"
             },
             "ports": [
                 {
-                    "name": "APPNAME-tcp-8080",
+                    "name": "APPNAMEproxy-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -49,16 +49,16 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "APPNAME"
+                "name": "APPNAMEproxy"
             },
             "host": "APPNAME.APP_ROOT_URL",
-            "serviceName": "APPNAME"
+            "serviceName": "APPNAMEproxy"
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "APPNAME",
+                "name": "APPNAMEproxy",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -73,7 +73,7 @@
                 "controllerTemplate": {
                     "replicas": 1,
                     "replicaSelector": {
-                        "deploymentconfig": "APPNAME"
+                        "deploymentconfig": "APPNAMEproxy"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -83,8 +83,8 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "APPNAME",
-                                        "image": "ryanj/hexboard",
+                                        "name": "APPNAMEproxy",
+                                        "image": "ryanj/openshift-proxy",
                                         "env": [
                                             {
                                                 "name": "OPENSHIFT_SERVER",
@@ -97,7 +97,7 @@
                                         ],
                                         "ports": [
                                             {
-                                                "name": "APPNAME-tcp-8080",
+                                                "name": "APPNAMEproxy-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -111,7 +111,7 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "APPNAME"
+                            "deploymentconfig": "APPNAMEproxy"
                         }
                     }
                 }

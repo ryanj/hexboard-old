@@ -1,52 +1,45 @@
-var cc       = require('config-multipaas'),
-    fs       = require('fs'),
-    restify  = require('restify'),
-    qs       = require('qs'),
-    httpProxy = require('http-proxy'),
-    request  = require('request')
-var app      = restify.createServer(),
+//var cc       = require('config-multipaas'),
+var restify  = require('restify'),
+    request  = require('request'),
+    fs       = require('fs')
+var config   = require('./bin/config'),
     pod      = require('./bin/pod'),
-    proxy    = httpProxy.createProxyServer({secure: false}),
-    sketches = require('./bin/sketches'), //<-- sketchController?
+    proxy    = require('./bin/proxy'),
+    sketches = require('./bin/sketches'),
+    app      = restify.createServer(),
     sketchController = require('./bin/sketch_controller.js')
-
-// Config
-var count = 0;
-var clients = {};
-var index = fs.readFileSync(__dirname + '/static/index.html');
-var config   = cc().add({
-  oauth_token: process.env.ACCESS_TOKEN || false,
-  namespace: process.env.NAMESPACE || 'demo',
-  openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja:8443',
-  openshift_app_basename: process.env.OPENSHIFT_APP_BASENAME || 'apps.summit.paas.ninja:8443'
-})
 
 // Middlewarez!
 app.use(restify.queryParser())
 app.use(restify.CORS())
 app.use(restify.fullResponse())
 
-// Routes
-app.get('/sketch/:containerId', sketchController.getImage);
-app.post('/sketch/:containerId', sketchController.receiveImage);
-app.del('/sketch/:containerId', sketchController.removeImage);
-app.get('/sketch/random/:numSketches', sketchController.randomSketches);
-app.get('/proxy/:pod_id', function(req, res, next) {
-  req.url = '/api/v1beta3/namespaces/'+config.get('namespace') + '/pods/'+ req.params.pod_id +'/proxy';
+// Default State
+var count = 0;
+var clients = {};
+var indexPage = fs.readFileSync(__dirname + '/static/index.html').toString();
 
-  req.headers.authorization = 'Bearer ' + config.get('oauth_token');
-  console.log(req.url);
-  proxy.web(req, res, { target: config.get('openshift_server') });
-});
-app.get('/status', function (req, res, next) { 
+// Routes
+app.get( '/api/sketch/:containerId', sketchController.getImage);
+app.post('/api/sketch/:containerId', sketchController.receiveImage);
+app.del( '/api/sketch/:containerId', sketchController.removeImage);
+app.get( '/api/sketch/random/:numSketches', sketchController.randomSketches);
+app.get( /^\/api\/v1beta3\/namespaces\/(\w)\/pods\/(\w)\/proxy\/(.*)/, proxy.path);
+app.get( /^\/api\/v1beta3\/namespaces\/(\w)\/pods\/(\w)\/proxy/, proxy.path);
+app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/proxy\/(.*)"), proxy.path);
+app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
+app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
+app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
+app.get( '/status', function (req, res, next) {
   res.send("{status: 'ok'}"); 
+  return next();
 });
 
 // Index
 app.get('/', function (req, res, next){
   res.status(200);
   res.header('Content-Type', 'text/html');
-  res.end(index.toString());
+  res.end(indexPage);
 })
 
 // Static Assets
@@ -60,4 +53,3 @@ app.listen(config.get('PORT'), config.get('IP'), function () {
 // WebSockets:
 require('./bin/ws/thousand')(app);
 require('./bin/ws/winner')(app);
-

@@ -149,7 +149,7 @@ hex.ui = (function dataSimulator(d3, Rx) {
       , opacity = { initial: 0.01, final: 0.9};
     var p0 = {x: perspective * (p.x - c.x) + c.x, y: perspective * (p.y - c.y) + c.y};
     p.stage = stage;
-    var newColor = stage === 4 && firstImage && hex.shadowman ? 'url(#redhat'+p.id+')': color(stage);
+    var newColor = stage === 5 && firstImage && hex.shadowman ? 'url(#redhat'+p.id+')': color(stage);
     svg.insert('path')
       .attr('class', 'hexagon falling')
       .attr('d', 'm' + hexagon(honeycomb.size).join('l') + 'z')
@@ -299,10 +299,12 @@ hex.ui = (function dataSimulator(d3, Rx) {
     if (! point.sketch) {
       if (firstImage) {
         firstImage = false;
-        if (points.some(function(point) {
-          return point.stage === 4;
-        }))
-        flipAll();
+        var flipRequired = points.some(function(point) {
+          return point.stage === 5;
+        });
+        if (flipRequired) {
+          flipAll();
+        }
       }
       image(point, sketch);
     };
