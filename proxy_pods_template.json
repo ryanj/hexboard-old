@@ -5,6 +5,27 @@
     "items": [
         {
             "kind": "Service",
+            "id": "${APPNAME}pod",
+            "creationTimestamp": null,
+            "apiVersion": "v1beta1",
+            "port": 8080,
+            "portName": "${APPNAME}pod-tcp-8080",
+            "protocol": "TCP",
+            "containerPort": 8080,
+            "selector": {
+                "deploymentconfig": "${APPNAME}pod"
+            },
+            "ports": [
+                {
+                    "name": "${APPNAME}pod-tcp-8080",
+                    "protocol": "TCP",
+                    "port": 8080,
+                    "containerPort": 8080
+                }
+            ]
+        },
+        {
+            "kind": "Service",
             "id": "${APPNAME}proxy",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
@@ -107,6 +128,59 @@
                         },
                         "labels": {
                             "deploymentconfig": "${APPNAME}proxy"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "${APPNAME}pod",
+                "creationTimestamp": null
+            },
+            "triggers": [
+                {
+                    "type": "ConfigChange"
+                }
+            ],
+            "template": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "controllerTemplate": {
+                    "replicas": ${REPLICA_COUNT},
+                    "replicaSelector": {
+                        "deploymentconfig": "${APPNAME}pod"
+                    },
+                    "podTemplate": {
+                        "desiredState": {
+                            "manifest": {
+                                "version": "v1beta2",
+                                "id": "",
+                                "volumes": null,
+                                "containers": [
+                                    {
+                                        "name": "${APPNAME}pod",
+                                        "image": "ryanj/sketchpod:latest",
+                                        "ports": [
+                                            {
+                                                "name": "${APPNAME}pod-tcp-8080",
+                                                "containerPort": 8080,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "resources": {},
+                                        "imagePullPolicy": "",
+                                        "capabilities": {}
+                                    }
+                                ],
+                                "restartPolicy": {}
+                            }
+                        },
+                        "labels": {
+                            "deploymentconfig": "${APPNAME}pod"
                         }
                     }
                 }
