@@ -1,13 +1,11 @@
-//var cc       = require('config-multipaas'),
 var restify  = require('restify'),
-    request  = require('request'),
     fs       = require('fs')
 var config   = require('./bin/config'),
     pod      = require('./bin/pod'),
     proxy    = require('./bin/proxy'),
     sketches = require('./bin/sketches'),
-    app      = restify.createServer(),
-    sketchController = require('./bin/sketch_controller.js')
+    sketchController = require('./bin/sketch_controller.js'),
+    app      = restify.createServer()
 
 // Middlewarez!
 app.use(restify.queryParser())
@@ -30,6 +28,8 @@ app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/pro
 app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
 app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
 app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
+app.put( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
+app.post(new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
 app.get( '/status', function (req, res, next) {
   res.send("{status: 'ok'}"); 
   return next();
