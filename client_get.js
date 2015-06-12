@@ -10,13 +10,10 @@ var cc       = require('config-multipaas'),
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-var namespace = process.env.OPENSHIFT_NAMESPACE || 'demo2';
-var one_thousand = 1024;
 var config   = cc().add({
-  one_k : process.env.DEMO_1K || one_thousand,
-  minions : process.env.DEMO_MINIONS || 10,
   oauth_token: process.env.ACCESS_TOKEN || false,
-  openshift_server: process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja'
+  namespace  : process.env.OPENSHIFT_NAMESPACE || 'demo',
+  openshift_server : process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja'
 })
 
 
@@ -35,7 +32,7 @@ if (process.env.ACCESS_TOKEN){
   var options = {
     'method' : 'get'
    ,'uri'    : url 
-   ,'qs'     : {'namespace': namespace, 'watch': "true"}
+   ,'qs'     : {'namespace': config.get('namespace'), 'watch': "true"}
    ,'rejectUnauthorized': false
    ,'strictSSL': false
    ,'auth'   : {'bearer': config.get('oauth_token') }

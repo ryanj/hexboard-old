@@ -4,16 +4,15 @@ var request = require('request')
   , fs = require('fs')
   ;
 
-// Returns a random integer between min included) and max (excluded)
-var getRandomInt = function (min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
-};
+var proxy = process.env.PROXY || "localhost:8080";
 
-var readStream = fs.createReadStream('server/api/thousand/cherries.png');
-var id = getRandomInt(0,1060);
-var url = 'http://localhost:9000/api/sketch/' + id + '?name=John%20Doe&cuid=test&submission_id=123';
+var readStream = fs.createReadStream('./static/img/cherries.png');
+var id = process.env.POD_ID || '';
+var url = process.env.POD_URL || 'http://'+proxy+'/demo/'+ id;
+var qs = '?username=John%20Doe&cuid=test&submission=123';
 // var url = 'http://beacon.jbosskeynote.com/api/sketch/' + id + '?name=John%20Doe&cuid=test&submission_id=123';
-var req = request.post(url, function (err, res, body) {
+console.log(url+qs)
+var req = request.post(url+qs, function (err, res, body) {
   if (err) {
     throw new Error(err);
   }
