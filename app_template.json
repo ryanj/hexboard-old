@@ -5,40 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "${APPNAME}pod",
+            "id": "${APPNAME}proxy",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "${APPNAME}pod-tcp-8080",
+            "portName": "${APPNAME}proxy-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "${APPNAME}pod"
+                "deploymentconfig": "${APPNAME}proxy"
             },
             "ports": [
                 {
-                    "name": "${APPNAME}pod-tcp-8080",
-                    "protocol": "TCP",
-                    "port": 8080,
-                    "containerPort": 8080
-                }
-            ]
-        },
-        {
-            "kind": "Service",
-            "id": "${APPNAME}",
-            "creationTimestamp": null,
-            "apiVersion": "v1beta1",
-            "port": 8080,
-            "portName": "${APPNAME}-tcp-8080",
-            "protocol": "TCP",
-            "containerPort": 8080,
-            "selector": {
-                "deploymentconfig": "${APPNAME}"
-            },
-            "ports": [
-                {
-                    "name": "${APPNAME}-tcp-8080",
+                    "name": "${APPNAME}proxy-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -49,16 +28,16 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}"
+                "name": "${APPNAME}proxy"
             },
             "host": "${APPNAME}.${APP_ROOT_URL}",
-            "serviceName": "${APPNAME}"
+            "serviceName": "${APPNAME}proxy"
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}",
+                "name": "${APPNAME}proxy",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -73,7 +52,7 @@
                 "controllerTemplate": {
                     "replicas": 1,
                     "replicaSelector": {
-                        "deploymentconfig": "${APPNAME}"
+                        "deploymentconfig": "${APPNAME}proxy"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -83,8 +62,16 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "${APPNAME}",
+                                        "name": "${APPNAME}proxy",
                                         "image": "ryanj/hexboard:latest",
+                                        "livenessProbe": {
+                                            "httpGet": {
+                                                "path": "/status",
+                                                "port": 8080
+                                            },
+                                            "initialDelaySeconds": 30,
+                                            "timeoutSeconds": 1
+                                        },
                                         "env": [
                                             {
                                                 "name": "APPNAME",
@@ -113,7 +100,7 @@
                                         ],
                                         "ports": [
                                             {
-                                                "name": "${APPNAME}-tcp-8080",
+                                                "name": "${APPNAME}proxy-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -127,11 +114,41 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "${APPNAME}"
+                            "deploymentconfig": "${APPNAME}proxy"
                         }
                     }
                 }
             }
+        },
+        {
+            "kind": "Service",
+            "id": "${APPNAME}pod",
+            "creationTimestamp": null,
+            "apiVersion": "v1beta1",
+            "port": 8080,
+            "portName": "${APPNAME}pod-tcp-8080",
+            "protocol": "TCP",
+            "containerPort": 8080,
+            "selector": {
+                "deploymentconfig": "${APPNAME}pod"
+            },
+            "ports": [
+                {
+                    "name": "${APPNAME}pod-tcp-8080",
+                    "protocol": "TCP",
+                    "port": 8080,
+                    "containerPort": 8080
+                }
+            ]
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "${APPNAME}pod"
+            },
+            "host": "${APPNAME}pod.${APP_ROOT_URL}",
+            "serviceName": "${APPNAME}pod"
         },
         {
             "kind": "DeploymentConfig",
@@ -164,7 +181,14 @@
                                     {
                                         "name": "${APPNAME}pod",
                                         "image": "ryanj/sketchpod:latest",
-
+                                        "livenessProbe": {
+                                            "httpGet": {
+                                                "path": "/status",
+                                                "port": 8080
+                                            },
+                                            "initialDelaySeconds": 30,
+                                            "timeoutSeconds": 1
+                                        },
                                         "ports": [
                                             {
                                                 "name": "${APPNAME}pod-tcp-8080",

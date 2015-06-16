@@ -64,6 +64,14 @@
                                     {
                                         "name": "${APPNAME}pod",
                                         "image": "ryanj/sketchpod:latest",
+                                        "livenessProbe": {
+                                            "httpGet": {
+                                                "path": "/status",
+                                                "port": 8080
+                                            },
+                                            "initialDelaySeconds": 30,
+                                            "timeoutSeconds": 1
+                                        },
                                         "ports": [
                                             {
                                                 "name": "${APPNAME}pod-tcp-8080",
