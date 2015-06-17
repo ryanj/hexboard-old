@@ -1,3 +1,5 @@
+var http     = require('http').globalAgent.maxSockets = Infinity;
+var https    = require('https').globalAgent.maxSockets = Infinity;
 var restify  = require('restify'),
     fs       = require('fs')
 var config   = require('./bin/config'),
