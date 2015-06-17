@@ -34,6 +34,20 @@
             "serviceName": "${APPNAME}proxy"
         },
         {
+          "kind": "ImageStream",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "hexboard",
+                "creationTimestamp": null
+            },
+            "spec": {
+                "dockerImageRepository": "ryanj/hexboard"
+            },
+            "status": {
+                "dockerImageRepository": ""
+            }
+        },
+        {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
@@ -41,6 +55,20 @@
                 "creationTimestamp": null
             },
             "triggers": [
+                {
+                    "type": "ImageChange",
+                    "imageChangeParams": {
+                        "automatic": true,
+                        "containerNames": [
+                            "${APPNAME}proxy"
+                        ],
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "hexboard:latest"
+                        },
+                        "lastTriggeredImage": ""
+                    }
+                },
                 {
                     "type": "ConfigChange"
                 }
