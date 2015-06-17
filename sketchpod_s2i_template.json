@@ -137,7 +137,7 @@
                         "type": "ConfigChange"
                     }
                 ],
-                "replicas": 1,
+                "replicas": ${REPLICA_COUNT},
                 "selector": {
                     "deploymentconfig": "${APPNAME}pod"
                 },
