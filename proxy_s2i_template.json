@@ -1,0 +1,192 @@
+{
+    "kind": "List",
+    "creationTimestamp": null,
+    "apiVersion": "v1beta1",
+    "items": [
+        {
+            "kind": "Service",
+            "id": "${APPNAME}proxy",
+            "creationTimestamp": null,
+            "apiVersion": "v1beta1",
+            "port": 8080,
+            "portName": "${APPNAME}proxy-tcp-8080",
+            "protocol": "TCP",
+            "containerPort": 8080,
+            "selector": {
+                "deploymentconfig": "${APPNAME}proxy"
+            },
+            "ports": [
+                {
+                    "name": "${APPNAME}proxy-tcp-8080",
+                    "protocol": "TCP",
+                    "port": 8080,
+                    "containerPort": 8080
+                }
+            ]
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "${APPNAME}proxy-build",
+                "creationTimestamp": null,
+                "labels": {
+                    "name": "${APPNAME}proxy-build"
+                }
+            },
+            "spec": {
+                "triggers": [
+                    {
+                        "type": "imageChange",
+                        "imageChange": {}
+                    }
+                ],
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "http://github.com/ryanj/openshift-proxy",
+                        "ref": "master"
+                    }
+                },
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "DockerImage",
+                            "name": "${NODEJS_BASE_IMAGE}"
+                        },
+                        "incremental": true
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "${APPNAME}proxy:latest"
+                    }
+                },
+                "resources": {}
+            },
+            "status": {
+                "lastVersion": 0
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "${APPNAME}proxy"
+            },
+            "host": "${APPNAME}.${APP_ROOT_URL}",
+            "serviceName": "${APPNAME}proxy"
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "${APPNAME}proxy",
+                "creationTimestamp": null,
+                "labels": {
+                    "name": "${APPNAME}proxy"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate",
+                    "resources": {}
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPNAME}proxy"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "sketchproxy:latest"
+                            },
+                            "lastTriggeredImage": ""
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "deploymentconfig": "${APPNAME}proxy"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "deploymentconfig": "${APPNAME}proxy",
+                            "name": "${APPNAME}proxy"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "${APPNAME}proxy",
+                                "image": "sketchproxy:latest",
+                                "livenessProbe": {
+                                    "httpGet": {
+                                        "path": "/status",
+                                        "port": 8080
+                                    },
+                                    "timeoutSeconds": 3,
+                                    "initialDelaySeconds": 30
+                                },
+                                "env": [
+                                    {
+                                        "name": "APPNAME",
+                                        "value": "${APPNAME}"
+                                    },
+                                    {
+                                        "name": "NAMESPACE",
+                                        "value": "${NAMESPACE}"
+                                    },
+                                    {
+                                        "name": "APP_ROOT_URL",
+                                        "value": "${APP_ROOT_URL}"
+                                    },
+                                    {
+                                        "name": "PROXY",
+                                        "value": "${PROXY}"
+                                    },
+                                    {
+                                        "name": "OPENSHIFT_SERVER",
+                                        "value": "${OPENSHIFT_SERVER}"
+                                    },
+                                    {
+                                        "name": "ACCESS_TOKEN",
+                                        "value": "${ACCESS_TOKEN}"
+                                    }
+                                ],
+                                "ports": [
+                                    {
+                                        "name": "${APPNAME}proxy-tcp-8080",
+                                        "containerPort": 8080,
+                                        "protocol": "tcp"
+                                    }
+                                ],
+                                "resources": {},
+                                "terminationMessagePath": "/dev/termination-log",
+                                "imagePullPolicy": "Always",
+                                "capabilities": {},
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": false
+                                }
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "dnsPolicy": "ClusterFirst"
+                    }
+                }
+            },
+            "status": {}
+        }
+    ]
+}
