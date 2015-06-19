@@ -119,7 +119,7 @@ var parseData = function(update) {
     return update;
   };
   var podName = update.object.spec.containers[0].name;
-  if (podName.indexOf(config.get('app_name')+'pod') !== 0 || !update.object.status || !update.object.status.phase) {
+  if (podName.indexOf(config.get('app_name')) !== 0 || !update.object.status || !update.object.status.phase) {
     // console.log(tag, 'Ignoring update for container name:', update.object.spec.containers[0].name);
   } else {
     var replicaName = update.object.metadata.name;

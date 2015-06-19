@@ -5,19 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "${APPNAME}pod",
+            "id": "sketchpod",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "${APPNAME}pod-tcp-8080",
+            "portName": "sketchpod-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "${APPNAME}pod"
+                "deploymentconfig": "sketchpod"
             },
             "ports": [
                 {
-                    "name": "${APPNAME}pod-tcp-8080",
+                    "name": "sketchpod-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -28,7 +28,7 @@
             "kind": "ImageStream",
             "apiVersion": "v1beta3",
             "metadata": {
-                "name": "${APPNAME}pod",
+                "name": "sketchpod",
                 "creationTimestamp": null
             },
             "spec": {},
@@ -40,26 +40,14 @@
             "kind": "BuildConfig",
             "apiVersion": "v1beta3",
             "metadata": {
-                "name": "${APPNAME}pod-build",
+                "name": "sketchpod-build",
                 "creationTimestamp": null,
                 "labels": {
-                    "name": "${APPNAME}pod-build"
+                    "name": "sketchpod-build"
                 }
             },
             "spec": {
                 "triggers": [
-                    {
-                        "type": "generic",
-                        "generic": {
-                            "secret": "54f870d75dc27467"
-                        }
-                    },
-                    {
-                        "type": "github",
-                        "github": {
-                            "secret": "480da39c08da96af"
-                        }
-                    },
                     {
                         "type": "imageChange",
                         "imageChange": {}
@@ -85,7 +73,7 @@
                 "output": {
                     "to": {
                         "kind": "ImageStreamTag",
-                        "name": "${APPNAME}pod:latest"
+                        "name": "sketchpod:latest"
                     }
                 },
                 "resources": {}
@@ -98,19 +86,19 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}pod"
+                "name": "sketchpod"
             },
-            "host": "${APPNAME}pod.${APP_ROOT_URL}",
-            "serviceName": "${APPNAME}pod"
+            "host": "sketchpod.${APP_ROOT_URL}",
+            "serviceName": "sketchpod"
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta3",
             "metadata": {
-                "name": "${APPNAME}pod",
+                "name": "sketchpod",
                 "creationTimestamp": null,
                 "labels": {
-                    "name": "${APPNAME}pod"
+                    "name": "sketchpod"
                 }
             },
             "spec": {
@@ -124,7 +112,7 @@
                         "imageChangeParams": {
                             "automatic": true,
                             "containerNames": [
-                                "${APPNAME}pod"
+                                "sketchpod"
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
@@ -139,31 +127,32 @@
                 ],
                 "replicas": ${REPLICA_COUNT},
                 "selector": {
-                    "deploymentconfig": "${APPNAME}pod"
+                    "deploymentconfig": "sketchpod"
                 },
                 "template": {
                     "metadata": {
                         "creationTimestamp": null,
                         "labels": {
-                            "deploymentconfig": "${APPNAME}pod",
-                            "name": "${APPNAME}pod"
+                            "deploymentconfig": "sketchpod",
+                            "name": "sketchpod"
                         }
                     },
                     "spec": {
                         "containers": [
                             {
-                                "name": "${APPNAME}pod",
+                                "name": "sketchpod",
                                 "image": "sketchpod:latest",
                                 "livenessProbe": {
                                     "httpGet": {
                                         "path": "/status",
                                         "port": 8080
                                     },
+                                    "timeoutSeconds": 5,
                                     "initialDelaySeconds": 30
                                 },
                                 "ports": [
                                     {
-                                        "name": "${APPNAME}pod-tcp-8080",
+                                        "name": "sketchpod-tcp-8080",
                                         "containerPort": 8080,
                                         "protocol": "tcp"
                                     }
@@ -187,19 +176,19 @@
         },
         {
             "kind": "Service",
-            "id": "${APPNAME}proxy",
+            "id": "hexboard"
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "${APPNAME}proxy-tcp-8080",
+            "portName": "hexboard-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "${APPNAME}proxy"
+                "deploymentconfig": "hexboard"
             },
             "ports": [
                 {
-                    "name": "${APPNAME}proxy-tcp-8080",
+                    "name": "hexboard-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -207,128 +196,180 @@
             ]
         },
         {
-            "kind": "Route",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "${APPNAME}proxy"
-            },
-            "host": "${APPNAME}.${APP_ROOT_URL}",
-            "serviceName": "${APPNAME}proxy"
-        },
-        {
-          "kind": "ImageStream",
+            "kind": "ImageStream",
             "apiVersion": "v1beta3",
             "metadata": {
                 "name": "hexboard",
                 "creationTimestamp": null
             },
-            "spec": {
-                "dockerImageRepository": "ryanj/hexboard"
-            },
+            "spec": {},
             "status": {
                 "dockerImageRepository": ""
             }
         },
         {
-            "kind": "DeploymentConfig",
+            "kind": "BuildConfig",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "hexboard-build",
+                "creationTimestamp": null,
+                "labels": {
+                    "name": "hexboard-build"
+                }
+            },
+            "spec": {
+                "triggers": [
+                    {
+                        "type": "imageChange",
+                        "imageChange": {}
+                    }
+                ],
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "http://github.com/ryanj/hexboard",
+                        "ref": "master"
+                    }
+                },
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "DockerImage",
+                            "name": "${NODEJS_BASE_IMAGE}"
+                        },
+                        "incremental": true
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "hexboard:latest"
+                    }
+                },
+                "resources": {}
+            },
+            "status": {
+                "lastVersion": 0
+            }
+        },
+        {
+            "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}proxy",
-                "creationTimestamp": null
+                "name": "hexboard"
             },
-            "triggers": [
-                {
-                    "type": "ImageChange",
-                    "imageChangeParams": {
-                        "automatic": true,
-                        "containerNames": [
-                            "${APPNAME}proxy"
-                        ],
-                        "from": {
-                            "kind": "ImageStreamTag",
-                            "name": "hexboard:latest"
-                        },
-                        "lastTriggeredImage": ""
-                    }
-                },
-                {
-                    "type": "ConfigChange"
+            "host": "${PROXY}",
+            "serviceName": "hexboard"
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1beta3",
+            "metadata": {
+                "name": "hexboard",
+                "creationTimestamp": null,
+                "labels": {
+                    "name": "hexboard"
                 }
-            ],
-            "template": {
+            },
+            "spec": {
                 "strategy": {
-                    "type": "Recreate"
+                    "type": "Recreate",
+                    "resources": {}
                 },
-                "controllerTemplate": {
-                    "replicas": 1,
-                    "replicaSelector": {
-                        "deploymentconfig": "${APPNAME}proxy"
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "hexboard"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "hexboard:latest"
+                            },
+                            "lastTriggeredImage": ""
+                        }
                     },
-                    "podTemplate": {
-                        "desiredState": {
-                            "manifest": {
-                                "version": "v1beta2",
-                                "id": "",
-                                "volumes": null,
-                                "containers": [
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "deploymentconfig": "hexboard"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "deploymentconfig": "hexboard",
+                            "name": "hexboard"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "hexboard",
+                                "image": "hexboard:latest",
+                                "livenessProbe": {
+                                    "httpGet": {
+                                        "path": "/status",
+                                        "port": 8080
+                                    },
+                                    "timeoutSeconds": 5,
+                                    "initialDelaySeconds": 30
+                                },
+                                "env": [
                                     {
-                                        "name": "${APPNAME}proxy",
-                                        "image": "ryanj/hexboard:latest",
-                                        "livenessProbe": {
-                                            "httpGet": {
-                                                "path": "/status",
-                                                "port": 8080
-                                            },
-                                            "initialDelaySeconds": 30,
-                                            "timeoutSeconds": 1
-                                        },
-                                        "env": [
-                                            {
-                                                "name": "APPNAME",
-                                                "value": "${APPNAME}"
-                                            },
-                                            {
-                                                "name": "NAMESPACE",
-                                                "value": "${NAMESPACE}"
-                                            },
-                                            {
-                                                "name": "APP_ROOT_URL",
-                                                "value": "${APP_ROOT_URL}"
-                                            },
-                                            {
-                                                "name": "PROXY",
-                                                "value": "${PROXY}"
-                                            },
-                                            {
-                                                "name": "OPENSHIFT_SERVER",
-                                                "value": "${OPENSHIFT_SERVER}"
-                                            },
-                                            {
-                                                "name": "ACCESS_TOKEN",
-                                                "value": "${ACCESS_TOKEN}"
-                                            }
-                                        ],
-                                        "ports": [
-                                            {
-                                                "name": "${APPNAME}proxy-tcp-8080",
-                                                "containerPort": 8080,
-                                                "protocol": "TCP"
-                                            }
-                                        ],
-                                        "resources": {},
-                                        "imagePullPolicy": "",
-                                        "capabilities": {}
+                                        "name": "APPNAME",
+                                        "value": "sketchpod"
+                                    },
+                                    {
+                                        "name": "NAMESPACE",
+                                        "value": "${NAMESPACE}"
+                                    },
+                                    {
+                                        "name": "APP_ROOT_URL",
+                                        "value": "${APP_ROOT_URL}"
+                                    },
+                                    {
+                                        "name": "PROXY",
+                                        "value": "${PROXY}"
+                                    },
+                                    {
+                                        "name": "OPENSHIFT_SERVER",
+                                        "value": "${OPENSHIFT_SERVER}"
+                                    },
+                                    {
+                                        "name": "ACCESS_TOKEN",
+                                        "value": "${ACCESS_TOKEN}"
                                     }
                                 ],
-                                "restartPolicy": {}
+                                "ports": [
+                                    {
+                                        "name": "hexboard-tcp-8080",
+                                        "containerPort": 8080,
+                                        "protocol": "tcp"
+                                    }
+                                ],
+                                "resources": {},
+                                "terminationMessagePath": "/dev/termination-log",
+                                "imagePullPolicy": "Always",
+                                "capabilities": {},
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": false
+                                }
                             }
-                        },
-                        "labels": {
-                            "deploymentconfig": "${APPNAME}proxy"
-                        }
+                        ],
+                        "restartPolicy": "Always",
+                        "dnsPolicy": "ClusterFirst"
                     }
                 }
-            }
+            },
+            "status": {}
         }
     ]
 }

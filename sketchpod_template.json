@@ -5,19 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "${APPNAME}pod",
+            "id": "sketchpod",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "${APPNAME}pod-tcp-8080",
+            "portName": "sketchpod-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "${APPNAME}pod"
+                "deploymentconfig": "sketchpod"
             },
             "ports": [
                 {
-                    "name": "${APPNAME}pod-tcp-8080",
+                    "name": "sketchpod-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -28,16 +28,16 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}pod"
+                "name": "sketchpod"
             },
-            "host": "${APPNAME}pod.${APP_ROOT_URL}",
-            "serviceName": "${APPNAME}pod"
+            "host": "sketchpod.${APP_ROOT_URL}",
+            "serviceName": "sketchpod"
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}pod",
+                "name": "sketchpod",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -52,7 +52,7 @@
                 "controllerTemplate": {
                     "replicas": ${REPLICA_COUNT},
                     "replicaSelector": {
-                        "deploymentconfig": "${APPNAME}pod"
+                        "deploymentconfig": "sketchpod"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -62,7 +62,7 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "${APPNAME}pod",
+                                        "name": "sketchpod",
                                         "image": "ryanj/sketchpod:latest",
                                         "livenessProbe": {
                                             "httpGet": {
@@ -74,7 +74,7 @@
                                         },
                                         "ports": [
                                             {
-                                                "name": "${APPNAME}pod-tcp-8080",
+                                                "name": "sketchpod-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -88,7 +88,7 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "${APPNAME}pod"
+                            "deploymentconfig": "sketchpod"
                         }
                     }
                 }

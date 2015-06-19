@@ -5,19 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "${APPNAME}pod",
+            "id": "sketchpod",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "${APPNAME}pod-tcp-8080",
+            "portName": "sketchpod-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "${APPNAME}pod"
+                "deploymentconfig": "sketchpod"
             },
             "ports": [
                 {
-                    "name": "${APPNAME}pod-tcp-8080",
+                    "name": "sketchpod-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -28,7 +28,7 @@
             "kind": "ImageStream",
             "apiVersion": "v1beta3",
             "metadata": {
-                "name": "${APPNAME}pod",
+                "name": "sketchpod",
                 "creationTimestamp": null
             },
             "spec": {},
@@ -40,10 +40,10 @@
             "kind": "BuildConfig",
             "apiVersion": "v1beta3",
             "metadata": {
-                "name": "${APPNAME}pod-build",
+                "name": "sketchpod-build",
                 "creationTimestamp": null,
                 "labels": {
-                    "name": "${APPNAME}pod-build"
+                    "name": "sketchpod-build"
                 }
             },
             "spec": {
@@ -85,7 +85,7 @@
                 "output": {
                     "to": {
                         "kind": "ImageStreamTag",
-                        "name": "${APPNAME}pod:latest"
+                        "name": "sketchpod:latest"
                     }
                 },
                 "resources": {}
@@ -98,19 +98,19 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}pod"
+                "name": "sketchpod"
             },
-            "host": "${APPNAME}pod.${APP_ROOT_URL}",
-            "serviceName": "${APPNAME}pod"
+            "host": "sketchpod.${APP_ROOT_URL}",
+            "serviceName": "sketchpod"
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta3",
             "metadata": {
-                "name": "${APPNAME}pod",
+                "name": "sketchpod",
                 "creationTimestamp": null,
                 "labels": {
-                    "name": "${APPNAME}pod"
+                    "name": "sketchpod"
                 }
             },
             "spec": {
@@ -124,7 +124,7 @@
                         "imageChangeParams": {
                             "automatic": true,
                             "containerNames": [
-                                "${APPNAME}pod"
+                                "sketchpod"
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
@@ -139,20 +139,20 @@
                 ],
                 "replicas": ${REPLICA_COUNT},
                 "selector": {
-                    "deploymentconfig": "${APPNAME}pod"
+                    "deploymentconfig": "sketchpod"
                 },
                 "template": {
                     "metadata": {
                         "creationTimestamp": null,
                         "labels": {
-                            "deploymentconfig": "${APPNAME}pod",
-                            "name": "${APPNAME}pod"
+                            "deploymentconfig": "sketchpod",
+                            "name": "sketchpod"
                         }
                     },
                     "spec": {
                         "containers": [
                             {
-                                "name": "${APPNAME}pod",
+                                "name": "sketchpod",
                                 "image": "sketchpod:latest",
                                 "livenessProbe": {
                                     "httpGet": {
@@ -164,7 +164,7 @@
                                 },
                                 "ports": [
                                     {
-                                        "name": "${APPNAME}pod-tcp-8080",
+                                        "name": "sketchpod-tcp-8080",
                                         "containerPort": 8080,
                                         "protocol": "tcp"
                                     }

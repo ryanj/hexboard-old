@@ -5,19 +5,19 @@
     "items": [
         {
             "kind": "Service",
-            "id": "${APPNAME}proxy",
+            "id": "sketchproxy",
             "creationTimestamp": null,
             "apiVersion": "v1beta1",
             "port": 8080,
-            "portName": "${APPNAME}proxy-tcp-8080",
+            "portName": "sketchproxy-tcp-8080",
             "protocol": "TCP",
             "containerPort": 8080,
             "selector": {
-                "deploymentconfig": "${APPNAME}proxy"
+                "deploymentconfig": "sketchproxy"
             },
             "ports": [
                 {
-                    "name": "${APPNAME}proxy-tcp-8080",
+                    "name": "sketchproxy-tcp-8080",
                     "protocol": "TCP",
                     "port": 8080,
                     "containerPort": 8080
@@ -28,10 +28,10 @@
             "kind": "Route",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}proxy"
+                "name": "sketchproxy"
             },
-            "host": "${APPNAME}.${APP_ROOT_URL}",
-            "serviceName": "${APPNAME}proxy"
+            "host": "sketch.${APP_ROOT_URL}",
+            "serviceName": "sketchproxy"
         },
         {
           "kind": "ImageStream",
@@ -51,7 +51,7 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1beta1",
             "metadata": {
-                "name": "${APPNAME}proxy",
+                "name": "sketchproxy",
                 "creationTimestamp": null
             },
             "triggers": [
@@ -60,7 +60,7 @@
                     "imageChangeParams": {
                         "automatic": true,
                         "containerNames": [
-                            "${APPNAME}proxy"
+                            "sketchproxy"
                         ],
                         "from": {
                             "kind": "ImageStreamTag",
@@ -80,7 +80,7 @@
                 "controllerTemplate": {
                     "replicas": 1,
                     "replicaSelector": {
-                        "deploymentconfig": "${APPNAME}proxy"
+                        "deploymentconfig": "sketchproxy"
                     },
                     "podTemplate": {
                         "desiredState": {
@@ -90,7 +90,7 @@
                                 "volumes": null,
                                 "containers": [
                                     {
-                                        "name": "${APPNAME}proxy",
+                                        "name": "sketchproxy",
                                         "image": "ryanj/openshift-proxy:latest",
                                         "livenessProbe": {
                                             "httpGet": {
@@ -103,7 +103,7 @@
                                         "env": [
                                             {
                                                 "name": "APPNAME",
-                                                "value": "${APPNAME}"
+                                                "value": "sketchpod"
                                             },
                                             {
                                                 "name": "NAMESPACE",
@@ -128,7 +128,7 @@
                                         ],
                                         "ports": [
                                             {
-                                                "name": "${APPNAME}proxy-tcp-8080",
+                                                "name": "sketchproxy-tcp-8080",
                                                 "containerPort": 8080,
                                                 "protocol": "TCP"
                                             }
@@ -142,7 +142,7 @@
                             }
                         },
                         "labels": {
-                            "deploymentconfig": "${APPNAME}proxy"
+                            "deploymentconfig": "sketchproxy"
                         }
                     }
                 }
