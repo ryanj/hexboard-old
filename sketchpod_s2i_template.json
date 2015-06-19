@@ -159,6 +159,7 @@
                                         "path": "/status",
                                         "port": 8080
                                     },
+                                    "timeoutSeconds": 5,
                                     "initialDelaySeconds": 30
                                 },
                                 "ports": [
