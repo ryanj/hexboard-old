@@ -69,10 +69,11 @@ Create sketchpods with an included proxy and hexboard, with `app_template.json`:
 cat app_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | sed -e "s/\${NODEJS_BASE_IMAGE}/$NODEJS_BASE_IMAGE/" | oc create -f -
 ```
 
-Run a build from the CLI:
+Kick off a few builds from the CLI:
 
 ```bash
 oc start-build sketchpod-build
+oc start-build sketchproxy-build
 ```
 
 When the build completes, scale up the result:
@@ -105,7 +106,7 @@ oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS
 Create sketchpods using S2I with `oc` and `sketchpod_s2i_template.json`:
 
 ```bash
-cat sketchpod_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | sed -e "s/\${NODEJS_BASE_IMAGE}/$NODEJS_BASE_IMAGE/" | oc create -f -
+cat sketchpod_s2i_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | sed -e "s/\${NODEJS_BASE_IMAGE}/$NODEJS_BASE_IMAGE/" | oc create -f -
 oc start-build sketchpod-build
 oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS
 ```
@@ -121,7 +122,7 @@ node client_get.js
 Count Completed pods:
 
 ```bash
-oc get pods | grep -v 'CONTAINER' | grep -v deployment | grep -iv 'not ready' | wc -l
+oc get pods | grep -v 'CONTAINER' | grep -v deployment | grep -iv Pending | grep -iv 'not ready' | wc -l
 ```
 
 Count Pending pods:

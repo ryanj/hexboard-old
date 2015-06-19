@@ -1,39 +1,41 @@
-var http     = require('http').globalAgent.maxSockets = Infinity;
-var https    = require('https').globalAgent.maxSockets = Infinity;
-var restify  = require('restify'),
-    fs       = require('fs')
-var config   = require('./bin/config'),
-    pod      = require('./bin/pod'),
-    proxy    = require('./bin/proxy'),
-    sketches = require('./bin/sketches'),
+// Update maxSockets to the default setting from nodejs-0.12
+var http      = require('http').globalAgent.maxSockets = Infinity;
+var https     = require('https').globalAgent.maxSockets = Infinity;
+
+var restify   = require('restify'),
+    fs        = require('fs')
+var config    = require('./bin/config'),
+    proxy     = require('./bin/proxy'),
     sketchController = require('./bin/sketch_controller.js'),
-    app      = restify.createServer()
+    app       = restify.createServer()
+var indexPage = fs.readFileSync(__dirname + '/static/index.html').toString();
 
 // Middlewarez!
 app.use(restify.queryParser())
 app.use(restify.CORS())
 app.use(restify.fullResponse())
 
-// Default State
-var count = 0;
-var clients = {};
-var indexPage = fs.readFileSync(__dirname + '/static/index.html').toString();
-
 // Routes
 app.get( '/api/sketch/:containerId', sketchController.getImage);
 app.post('/api/sketch/:containerId', sketchController.receiveImage);
 app.del( '/api/sketch/:containerId', sketchController.removeImage);
 app.get( '/api/sketch/random/:numSketches', sketchController.randomSketches);
-app.get( /^\/api\/v1beta3\/namespaces\/(\w)\/pods\/(\w)\/proxy\/(.*)/, proxy.path);
-app.get( /^\/api\/v1beta3\/namespaces\/(\w)\/pods\/(\w)\/proxy/, proxy.path);
-app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/proxy\/(.*)"), proxy.path);
-app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
-app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
-app.put( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
-app.post( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.path);
-app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
-app.put( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
-app.post(new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.path);
+app.get( new RegExp("/direct\/([.0-9]+)\/(.*)"), proxy.directPath);
+app.get( new RegExp("/direct\/([.0-9]+)"), proxy.directPath);
+app.put( new RegExp("/direct\/([.0-9]+)\/(.*)"), proxy.directPath);
+app.put( new RegExp("/direct\/([.0-9]+)"), proxy.directPath);
+app.post(new RegExp("/direct\/([.0-9]+)\/(.*)"), proxy.directPath);
+app.post(new RegExp("/direct\/([.0-9]+)"), proxy.directPath);
+app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/proxy\/(.*)"), proxy.apiPath);
+app.get( new RegExp("/("+config.get('namespace')+")\/pods\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.apiPath);
+app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.apiPath);
+app.put( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.apiPath);
+app.post(new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)\/(.*)"), proxy.apiPath);
+app.get( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.apiPath);
+app.put( new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.apiPath);
+app.post(new RegExp("/("+config.get('namespace')+")\/([-a-zA-Z0-9_]+)"), proxy.apiPath);
+app.get( /^\/api\/v1beta3\/namespaces\/(\w)\/pods\/(\w)\/proxy\/(.*)/, proxy.apiPath);
+app.get( /^\/api\/v1beta3\/namespaces\/(\w)\/pods\/(\w)\/proxy/, proxy.apiPath);
 app.get( '/status', function (req, res, next) {
   res.send("{status: 'ok'}"); 
   return next();
