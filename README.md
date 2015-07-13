@@ -20,16 +20,12 @@ oc login --server=https://$OPENSHIFT_SERVER --token=$ACCESS_TOKEN
 These config keys will allow you to create services via templates, or run a local hexboard server:
 
 ```bash
-export APPNAME=sketch
-export NAMESPACE=demo
+export APPNAME=sketchpod
+export NAMESPACE=hexboard
 export INIT_REPLICAS=0 
 export MAX_REPLICAS=1026 
-export APP_ROOT_URL="${NAMESPACE}.apps.example.com"
-export PROXY="sketch.${APP_ROOT_URL}"
-export PROXY_HOST="sketch.${APP_ROOT_URL}"
-export POD_HOST="sketchpod.${APP_ROOT_URL}"
-export OPENSHIFT_SERVER="openshift-master.example.com:8443"
-export NODEJS_BASE_IMAGE=$( oc get is/nodejs-010-rhel7 -n openshift | grep -v 'NAME' | sed -e "s/^nodejs-010-rhel7\s*\([^\t ]*\).*$/\1/" | sed -e "s/\//\\\\\//g" )
+export HEXBOARD_HOST="http://localhost:1080"
+export OPENSHIFT_SERVER="localhost:8443"
 export ACCESS_TOKEN="ExXbbtuE-YOUR-ACCESS-TOKEN-eZ8Z9RQ"
 ```
 
@@ -40,25 +36,29 @@ echo $APPNAME
 echo $NAMESPACE
 echo $INIT_REPLICAS
 echo $MAX_REPLICAS
-echo $APP_ROOT_URL
-echo $PROXY
-echo $PROXY_HOST
-echo $POD_HOST
+echo $HEXBOARD_HOST
 echo $OPENSHIFT_SERVER
-echo $NODEJS_BASE_IMAGE
 echo $ACCESS_TOKEN
 ```
 
 You should now be ready to deploy the hexboard, or run a local copy using `npm start`.
 
+## Install the Template
+You can optionally install the application template, making it easier to launch:
+
+```bash
+oc project hexboard
+oc process -v="ACCESS_TOKEN=$ACCESS_TOKEN" -f app_template.json | oc create -f -
+```
+
 # Web Workflow
 
-1. Click "Get Started" or "Create +" from the OpenShift project overview page
-2. Enter this repo url: [http://github.com/ryanj/sketchpod](http://github.com/ryanj/sketchpod)
-3. Choose the Nodejs builder image
-4. Confirm the app creation details, show initial scaling factor (1).
-5. Navigate to the "Builds" tab in the OpenShift web console, and click "Start Build".
-6. Deploy the `advanced_proxy_template` to set up the UI. Open your `$PROXY_HOST` url in a web browser.
+1. Create a 'hexboard' project
+2. Click "Get Started" or "Create +" from the hexboard project overview page
+3. Select the hexboard template (instant app).
+4. Confirm the app creation details, update the `ACCESS_TOKEN`, `HEXBOARD_HOST`, and `OPENSHIFT_SERVER` fields as needed.
+5. Navigate to the "Builds" tab in the OpenShift web console, and start each of the builds.
+6. Expose the `sketchpod` service via an external route (`oc expose se/sketchpod --hostname="${HEXBOARD_HOST}"`)
 7. Scale up to animate the hexboard display (`oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS`)
 
 # CLI workflow

@@ -1,32 +1,20 @@
 {
-    "kind": "List",
-    "creationTimestamp": null,
-    "apiVersion": "v1beta1",
-    "items": [
-        {
-            "kind": "Service",
-            "id": "sketchpod",
-            "creationTimestamp": null,
-            "apiVersion": "v1beta1",
-            "port": 8080,
-            "portName": "sketchpod-tcp-8080",
-            "protocol": "TCP",
-            "containerPort": 8080,
-            "selector": {
-                "deploymentconfig": "sketchpod"
-            },
-            "ports": [
-                {
-                    "name": "sketchpod-tcp-8080",
-                    "protocol": "TCP",
-                    "port": 8080,
-                    "containerPort": 8080
-                }
-            ]
-        },
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "hexboard",
+        "creationTimestamp": null,
+        "annotations": {
+            "description": "Hexboard Demo",
+            "provider": "Red Hat Summit 2015 - JBoss Keynote demo team",
+            "iconClass": "icon-nodejs",
+            "tags": "instant-app,nodejs"
+        }
+    },
+    "objects": [
         {
             "kind": "ImageStream",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "sketchpod",
                 "creationTimestamp": null
@@ -38,26 +26,34 @@
         },
         {
             "kind": "BuildConfig",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
-                "name": "sketchpod-build",
-                "creationTimestamp": null,
-                "labels": {
-                    "name": "sketchpod-build"
-                }
+                "name": "sketchpod",
+                "creationTimestamp": null
             },
             "spec": {
                 "triggers": [
                     {
-                        "type": "imageChange",
+                        "type": "GitHub",
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "Generic",
+                        "generic": {
+                            "secret": "${GENERIC_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "ImageChange",
                         "imageChange": {}
                     }
                 ],
                 "source": {
                     "type": "Git",
                     "git": {
-                        "uri": "http://github.com/ryanj/sketchpod",
-                        "ref": "master"
+                        "uri": "http://github.com/ryanj/sketchpod"
                     }
                 },
                 "strategy": {
@@ -65,7 +61,7 @@
                     "sourceStrategy": {
                         "from": {
                             "kind": "DockerImage",
-                            "name": "${NODEJS_BASE_IMAGE}"
+                            "name": "openshift/nodejs-010-centos7:latest"
                         },
                         "incremental": true
                     }
@@ -83,23 +79,11 @@
             }
         },
         {
-            "kind": "Route",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "sketchpod"
-            },
-            "host": "sketchpod.${APP_ROOT_URL}",
-            "serviceName": "sketchpod"
-        },
-        {
             "kind": "DeploymentConfig",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "sketchpod",
-                "creationTimestamp": null,
-                "labels": {
-                    "name": "sketchpod"
-                }
+                "creationTimestamp": null
             },
             "spec": {
                 "strategy": {
@@ -107,6 +91,9 @@
                     "resources": {}
                 },
                 "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
                     {
                         "type": "ImageChange",
                         "imageChangeParams": {
@@ -117,15 +104,11 @@
                             "from": {
                                 "kind": "ImageStreamTag",
                                 "name": "sketchpod:latest"
-                            },
-                            "lastTriggeredImage": ""
+                            }
                         }
-                    },
-                    {
-                        "type": "ConfigChange"
                     }
                 ],
-                "replicas": ${REPLICA_COUNT},
+                "replicas": 1,
                 "selector": {
                     "deploymentconfig": "sketchpod"
                 },
@@ -133,8 +116,7 @@
                     "metadata": {
                         "creationTimestamp": null,
                         "labels": {
-                            "deploymentconfig": "sketchpod",
-                            "name": "sketchpod"
+                            "deploymentconfig": "sketchpod"
                         }
                     },
                     "spec": {
@@ -154,13 +136,12 @@
                                     {
                                         "name": "sketchpod-tcp-8080",
                                         "containerPort": 8080,
-                                        "protocol": "tcp"
+                                        "protocol": "TCP"
                                     }
                                 ],
                                 "resources": {},
                                 "terminationMessagePath": "/dev/termination-log",
                                 "imagePullPolicy": "Always",
-                                "capabilities": {},
                                 "securityContext": {
                                     "capabilities": {},
                                     "privileged": false
@@ -176,28 +157,31 @@
         },
         {
             "kind": "Service",
-            "id": "hexboard"
-            "creationTimestamp": null,
-            "apiVersion": "v1beta1",
-            "port": 8080,
-            "portName": "hexboard-tcp-8080",
-            "protocol": "TCP",
-            "containerPort": 8080,
-            "selector": {
-                "deploymentconfig": "hexboard"
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "sketchpod",
+                "creationTimestamp": null
             },
-            "ports": [
-                {
-                    "name": "hexboard-tcp-8080",
-                    "protocol": "TCP",
-                    "port": 8080,
-                    "containerPort": 8080
-                }
-            ]
+            "spec": {
+                "ports": [
+                    {
+                        "name": "sketchpod-tcp-8080",
+                        "protocol": "TCP",
+                        "port": 8080,
+                        "targetPort": 8080,
+                        "nodePort": 0
+                    }
+                ],
+                "selector": {
+                    "deploymentconfig": "sketchpod"
+                },
+                "portalIP": "",
+                "type": "ClusterIP"
+            }
         },
         {
             "kind": "ImageStream",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "hexboard",
                 "creationTimestamp": null
@@ -209,26 +193,34 @@
         },
         {
             "kind": "BuildConfig",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
-                "name": "hexboard-build",
-                "creationTimestamp": null,
-                "labels": {
-                    "name": "hexboard-build"
-                }
+                "name": "hexboard",
+                "creationTimestamp": null
             },
             "spec": {
                 "triggers": [
                     {
-                        "type": "imageChange",
+                        "type": "GitHub",
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "Generic",
+                        "generic": {
+                            "secret": "${GENERIC_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "ImageChange",
                         "imageChange": {}
                     }
                 ],
                 "source": {
                     "type": "Git",
                     "git": {
-                        "uri": "http://github.com/ryanj/hexboard",
-                        "ref": "master"
+                        "uri": "http://github.com/ryanj/hexboard"
                     }
                 },
                 "strategy": {
@@ -236,7 +228,7 @@
                     "sourceStrategy": {
                         "from": {
                             "kind": "DockerImage",
-                            "name": "${NODEJS_BASE_IMAGE}"
+                            "name": "openshift/nodejs-010-centos7:latest"
                         },
                         "incremental": true
                     }
@@ -254,23 +246,11 @@
             }
         },
         {
-            "kind": "Route",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "hexboard"
-            },
-            "host": "${PROXY}",
-            "serviceName": "hexboard"
-        },
-        {
             "kind": "DeploymentConfig",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
                 "name": "hexboard",
-                "creationTimestamp": null,
-                "labels": {
-                    "name": "hexboard"
-                }
+                "creationTimestamp": null
             },
             "spec": {
                 "strategy": {
@@ -278,6 +258,9 @@
                     "resources": {}
                 },
                 "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
                     {
                         "type": "ImageChange",
                         "imageChangeParams": {
@@ -288,12 +271,8 @@
                             "from": {
                                 "kind": "ImageStreamTag",
                                 "name": "hexboard:latest"
-                            },
-                            "lastTriggeredImage": ""
+                            }
                         }
-                    },
-                    {
-                        "type": "ConfigChange"
                     }
                 ],
                 "replicas": 1,
@@ -304,8 +283,7 @@
                     "metadata": {
                         "creationTimestamp": null,
                         "labels": {
-                            "deploymentconfig": "hexboard",
-                            "name": "hexboard"
+                            "deploymentconfig": "hexboard"
                         }
                     },
                     "spec": {
@@ -324,19 +302,15 @@
                                 "env": [
                                     {
                                         "name": "APPNAME",
-                                        "value": "sketchpod"
+                                        "value": "${APPNAME}"
                                     },
                                     {
                                         "name": "NAMESPACE",
                                         "value": "${NAMESPACE}"
                                     },
                                     {
-                                        "name": "APP_ROOT_URL",
-                                        "value": "${APP_ROOT_URL}"
-                                    },
-                                    {
-                                        "name": "PROXY",
-                                        "value": "${PROXY}"
+                                        "name": "HEXBOARD_HOST",
+                                        "value": "${HEXBOARD_HOST}"
                                     },
                                     {
                                         "name": "OPENSHIFT_SERVER",
@@ -351,13 +325,12 @@
                                     {
                                         "name": "hexboard-tcp-8080",
                                         "containerPort": 8080,
-                                        "protocol": "tcp"
+                                        "protocol": "TCP"
                                     }
                                 ],
                                 "resources": {},
                                 "terminationMessagePath": "/dev/termination-log",
                                 "imagePullPolicy": "Always",
-                                "capabilities": {},
                                 "securityContext": {
                                     "capabilities": {},
                                     "privileged": false
@@ -370,6 +343,69 @@
                 }
             },
             "status": {}
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "hexboard",
+                "creationTimestamp": null
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "hexboard-tcp-8080",
+                        "protocol": "TCP",
+                        "port": 8080,
+                        "targetPort": 8080,
+                        "nodePort": 0
+                    }
+                ],
+                "selector": {
+                    "deploymentconfig": "hexboard"
+                },
+                "portalIP": "",
+                "type": "ClusterIP"
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "description": "each hexboard tile represents one ...",
+            "value": "sketchpod",
+            "name": "APPNAME"
+        },
+        {
+            "description": "fetch this from the API?",
+            "value": "hexboard",
+            "name": "NAMESPACE"
+        },
+        {
+            "description": "The host URL for the app (including port and proto)",
+            "value": "http://localhost:1080",
+            "name": "HEXBOARD_HOST"
+        },
+        {
+            "description": "The API server address (including port)",
+            "value": "localhost:8443",
+            "name": "OPENSHIFT_SERVER"
+        },
+        {
+            "description": "OpenShift OAuth token",
+            "value": "Missing (and Required!)",
+            "name": "ACCESS_TOKEN"
+        },
+        {
+            "description": "Generic webhook secret",
+            "from": "[a-zA-Z0-9_]{16}",
+            "generate": "expression",
+            "name": "GENERIC_WEBHOOK_SECRET"
+        },
+        {
+            "description": "GitHub webhook secret",
+            "from": "[a-zA-Z0-9_]{16}",
+            "generate": "expression",
+            "name": "GITHUB_WEBHOOK_SECRET"
         }
     ]
 }

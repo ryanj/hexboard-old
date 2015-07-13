@@ -128,8 +128,8 @@ var parseData = function(update) {
     update.data = {
       id: podNumber(update.object.metadata.namespace, replicaName),
       name: replicaName,
-      url: "http://"+config.get('proxy')+'/'+config.get('namespace')+'/'+replicaName,
-      hostname: "http://"+config.get('proxy')+'/'+config.get('namespace')+'/'+replicaName,
+      url: config.get('hexboard_host')+'/'+config.get('namespace')+'/'+replicaName,
+      hostname: config.get('hexboard_host')+'/'+config.get('namespace')+'/'+replicaName,
       stage: update.type,
       type: 'event',
       timestamp: update.timestamp,
