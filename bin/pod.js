@@ -128,7 +128,7 @@ var parseData = function(update) {
     update.data = {
       id: podNumber(update.object.metadata.namespace, replicaName),
       name: replicaName,
-      url: config.get('hexboard_host')+'/'+config.get('namespace')+'/'+replicaName,
+      url: "http://"+config.get('hexboard_host')+'/'+config.get('namespace')+'/'+replicaName,
       hostname: config.get('hexboard_host')+'/'+config.get('namespace')+'/'+replicaName,
       stage: update.type,
       type: 'event',

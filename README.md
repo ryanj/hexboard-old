@@ -1,12 +1,24 @@
 # hexboard [![Dependency Check](http://img.shields.io/david/ryanj/hexboard.svg)](https://david-dm.org/ryanj/hexboard)
 
+Container vizualization for [OpenShift platformV3](http://openshift.com).  As featured in the [Red Hat Summit 2015 - JBoss Keynote demo](https://www.youtube.com/watch?v=wWNVpFibayA&t=26m48s)
+
+## Hardware
+
+*TODO:* 
+
+* Add a link to DevNation pulse session
+* Add link to ansible scripts
+
+To use a VM, follow the setup instructions from [this workshop](http://bit.ly/v3devs)
+
 ## Authentication
-Fetch an `ACCESS_TOKEN` from the OpenShift web console at `/oauth/token/request`.
+After setting up your OpenShiftV3 cluster, fetch an access token on the web, at `$OPENSHIFT_SERVER/oauth/token/request`.
 
 Update your [configuration](#configuration) with the new info:
 
 ```bash
 export ACCESS_TOKEN="YOUR-ACCESS-TOKEN"
+export OPENSHIFT_SERVER="localhost:8443"
 ```
 
 Use the information from the browser's `oauth/token/display` page to authenticate using the [`oc`](https://github.com/openshift/origin/releases) cli tool:
@@ -15,100 +27,88 @@ Use the information from the browser's `oauth/token/display` page to authenticat
 oc login --server=https://$OPENSHIFT_SERVER --token=$ACCESS_TOKEN
 ```
 
-## Configuration
+## Create a new Project
+Create a new `hexboard` project on the web.
 
-These config keys will allow you to create services via templates, or run a local hexboard server:
+### Install the Template
+Install the application template, making it easy to launch from the web or CLI:
 
 ```bash
-export APPNAME=sketchpod
-export NAMESPACE=hexboard
-export INIT_REPLICAS=0 
-export MAX_REPLICAS=1026 
-export HEXBOARD_HOST="http://localhost:1080"
+oc project hexboard
+oc create -f app_template.json
+```
+
+## Configuration
+
+These config keys can be used for running the demo locally:
+
+```bash
+export HEXBOARD_UI_SIZE=32 
+export HEXBOARD_HOST="localhost:8080"
 export OPENSHIFT_SERVER="localhost:8443"
 export ACCESS_TOKEN="ExXbbtuE-YOUR-ACCESS-TOKEN-eZ8Z9RQ"
+```
+
+To run the same code inside a VM, you'll need to make a few adjustments:
+
+```bash
+export HEXBOARD_HOST="localhost:1080"
+export OPENSHIFT_SERVER="172.17.42.1:8443"
 ```
 
 Double-check your config keys before proceeding:
 
 ```bash
-echo $APPNAME
-echo $NAMESPACE
-echo $INIT_REPLICAS
-echo $MAX_REPLICAS
+echo $HEXBOARD_UI_SIZE
 echo $HEXBOARD_HOST
 echo $OPENSHIFT_SERVER
 echo $ACCESS_TOKEN
 ```
 
-You should now be ready to deploy the hexboard, or run a local copy using `npm start`.
+The configuration keys can be entered on the web, or provided via the command line.
 
-## Install the Template
-You can optionally install the application template, making it easier to launch:
+# Launching from the CLI
+
+After setting your config keys, run the following to launch the demo from a pre-installed template:
 
 ```bash
-oc project hexboard
-oc process -v="ACCESS_TOKEN=$ACCESS_TOKEN" -f app_template.json | oc create -f -
+oc process -v="HEXBOARD_UI_SIZE=${HEXBOARD_UI_SIZE},HEXBOARD_HOST=${HEXBOARD_HOST},OPENSHIFT_SERVER=${OPENSHIFT_SERVER},ACCESS_TOKEN=${ACCESS_TOKEN}" hexboard | oc create -f -
 ```
 
-# Web Workflow
+# Launching on the Web
 
-1. Create a 'hexboard' project
-2. Click "Get Started" or "Create +" from the hexboard project overview page
-3. Select the hexboard template (instant app).
-4. Confirm the app creation details, update the `ACCESS_TOKEN`, `HEXBOARD_HOST`, and `OPENSHIFT_SERVER` fields as needed.
-5. Navigate to the "Builds" tab in the OpenShift web console, and start each of the builds.
-6. Expose the `sketchpod` service via an external route (`oc expose se/sketchpod --hostname="${HEXBOARD_HOST}"`)
-7. Scale up to animate the hexboard display (`oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS`)
+1. Click "Get Started" or "Create +" from the hexboard project overview page
+2. Select the pre-installed `hexboard` template
+3. Confirm the app creation details, update the `ACCESS_TOKEN`, `HEXBOARD_HOST`, and `OPENSHIFT_SERVER` fields as needed.
 
-# CLI workflow
+# Build
 
-Create sketchpods with an included proxy and hexboard, with `app_template.json`:
+Docker image builds can be initiated by navigating to the "Builds" tab in the V3 web console.  Click on the `Start Build` button for each service.
+
+You can also initiate the builds from the command line:
 
 ```bash
-cat app_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | sed -e "s/\${NODEJS_BASE_IMAGE}/$NODEJS_BASE_IMAGE/" | oc create -f -
+oc start-build hexboard
+oc start-build sketchpod
 ```
 
-Kick off a few builds from the CLI:
+# Routing 
+Expose the `sketchpod` service via an external route:
 
 ```bash
-oc start-build sketchpod-build
-oc start-build sketchproxy-build
+oc expose se/hexboard --hostname="${HEXBOARD_HOST}"
 ```
 
-When the build completes, scale up the result:
+You may need to omit the port number for this step.
+
+# Scale
+
+When the build completes, verify that the hexboard is accessible at `http://$HEXBOARD_HOST`. 
+
+Then, scale up the number of `sketchpod` containers to populate the `hexboard` UI:
 
 ```bash
-oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS
-```
-
-## Alternate project templates
-
-Create the proxy (w/o sketchpods) using `proxy_template.json`:
-
-```bash
-cat proxy_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | oc create -f -
-```
-
-Advanced proxy (including UI, w/o sketchpods), with `proxy_plus_template.json`:
-
-```bash
-cat proxy_plus_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | oc create -f -
-```
-
-Create sketchpods from images with `oc` and `sketchpod_template.json`:
-
-```bash
-cat sketchpod_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | oc create -f -
-oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS
-```
-
-Create sketchpods using S2I with `oc` and `sketchpod_s2i_template.json`:
-
-```bash
-cat sketchpod_s2i_template.json | sed -e "s/\${REPLICA_COUNT}/$INIT_REPLICAS/" | sed -e "s/\${APP_ROOT_URL}/$APP_ROOT_URL/g" | sed -e "s/\${APPNAME}/$APPNAME/g" | sed -e "s/\${ACCESS_TOKEN}/$ACCESS_TOKEN/" | sed -e "s/\${OPENSHIFT_SERVER}/$OPENSHIFT_SERVER/" | sed -e "s/\${NAMESPACE}/$NAMESPACE/" | sed -e "s/\${PROXY}/$PROXY/" | sed -e "s/\${NODEJS_BASE_IMAGE}/$NODEJS_BASE_IMAGE/" | oc create -f -
-oc start-build sketchpod-build
-oc scale rc/sketchpod-1 --replicas=$MAX_REPLICAS
+oc scale rc/sketchpod-1 --replicas=$HEXBOARD_UI_SIZE
 ```
 
 ## Monitoring from the CLI

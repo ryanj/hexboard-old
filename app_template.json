@@ -309,6 +309,10 @@
                                         "value": "${NAMESPACE}"
                                     },
                                     {
+                                        "name": "HEXBOARD_UI_SIZE",
+                                        "value": "${HEXBOARD_UI_SIZE}"
+                                    },
+                                    {
                                         "name": "HEXBOARD_HOST",
                                         "value": "${HEXBOARD_HOST}"
                                     },
@@ -381,13 +385,18 @@
             "name": "NAMESPACE"
         },
         {
-            "description": "The host URL for the app (including port and proto)",
-            "value": "http://localhost:1080",
+            "description": "The host URL for the app (port included)",
+            "value": "localhost:1080",
             "name": "HEXBOARD_HOST"
         },
         {
-            "description": "The API server address (including port)",
-            "value": "localhost:8443",
+            "description": "The total number of hexagons (containers) to display in the UI",
+            "value": "32",
+            "name": "HEXBOARD_UI_SIZE"
+        },
+        {
+            "description": "The master API server address (port included)",
+            "value": "172.17.42.1:8443",
             "name": "OPENSHIFT_SERVER"
         },
         {

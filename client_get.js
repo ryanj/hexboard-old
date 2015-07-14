@@ -3,32 +3,20 @@
 var cc       = require('config-multipaas'),
     path     = require('path'),
     fs       = require('fs'),
-    //kclient  = require('node-kubernetes-client'),
     qs       = require('qs'),
     request  = require('request')
-    //https = require('https')
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 var config   = cc().add({
   oauth_token: process.env.ACCESS_TOKEN || false,
-  namespace  : process.env.OPENSHIFT_NAMESPACE || 'demo',
-  openshift_server : process.env.OPENSHIFT_SERVER || 'openshift-master.summit.paas.ninja'
+  namespace  : process.env.NAMESPACE || 'hexboard',
+  openshift_server : process.env.OPENSHIFT_SERVER || 'localhost'
 })
 
 
 if (process.env.ACCESS_TOKEN){
-  //var osv3_client = new kclient({
-  //  host:  config.get('openshift_server') + ':8443',
-  //  protocol: 'https',
-  //  version: 'v1beta2',
-  //  token: config.get('oauth_token')
-  //});
-  //osv3_client.pods.getBy({"namespace":"demo2"},function(err, pods){
-  //  console.log('err:', err);
-  //  console.log('pods:', pods);
-  //});
-  var url = 'https://' + config.get('openshift_server') + ':8443/api/v1beta3/watch/pods'
+  var url = 'https://' + config.get('openshift_server') + '/api/v1/watch/pods'
   var options = {
     'method' : 'get'
    ,'uri'    : url 
